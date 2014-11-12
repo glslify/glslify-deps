@@ -34,3 +34,66 @@ notice some parallels here with [browserify](http://browserify.org)'s
   }
 ]
 ```
+
+## Transform API
+
+The transform API has changed since glslify 1.0 to make it more "vanilla".
+
+``` javascript
+module.exports = function(file, source, options, done) {
+  done(null, source.toUpperCase())
+}
+```
+
+As an example, here's [glslify-hex](http://github.com/hughsk/glslify-hex)
+rewritten using the new API:
+
+``` javascript
+var through = require('through')
+
+var regexLong  = /#([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})?/gi
+var regexShort = /#([a-f0-9])([a-f0-9])([a-f0-9])([a-f0-9])?/gi
+
+module.exports = transform
+
+function transform(filename, src, opts, done) {
+  src = src.replace(regexShort, function(whole, r, g, b, a) {
+    return !a
+      ? '#' + r + r + g + g + b + b
+      : '#' + r + r + g + g + b + b + a + a
+  }).replace(regexLong, function(whole, r, g, b, a) {
+    r = makeFloat(parseInt(r, 16) / 255)
+    g = makeFloat(parseInt(g, 16) / 255)
+    b = makeFloat(parseInt(b, 16) / 255)
+    a = makeFloat(parseInt(a, 16) / 255)
+
+    return isNaN(a)
+      ? 'vec3('+[r,g,b].join(',')+')'
+      : 'vec4('+[r,g,b,a].join(',')+')'
+  })
+
+  done(null, src)
+}
+
+function makeFloat(n) {
+  return String(n).indexOf('.') === -1
+    ? n + '.'
+    : n
+}
+```
+
+## Transforms in `package.json`
+
+Transforms now support options specified in `package.json` using a cleaner
+syntax:
+
+``` json
+{
+  "glslify": {
+    "transform": {
+      "glslify-hex": true,
+      "glslify-optimize": { "mangle": true }
+    }
+  }
+}
+```
