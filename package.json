@@ -1,0 +1,22 @@
+{
+  "name": "glslify-deps",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node test | tap-spec"
+  },
+  "dependencies": {
+    "events": "^1.0.2",
+    "findup": "^0.1.5",
+    "glsl-resolve": "0.0.1",
+    "glsl-tokenizer": "git://github.com/stackgl/glsl-tokenizer#2.0.0",
+    "graceful-fs": "^3.0.4",
+    "inherits": "^2.0.1",
+    "map-limit": "0.0.1",
+    "resolve": "^1.0.0"
+  },
+  "devDependencies": {
+    "glsl-random": "0.0.4",
+    "tape": "^3.0.2"
+  }
+}
