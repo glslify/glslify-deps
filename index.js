@@ -29,6 +29,10 @@ function Depper(cwd) {
   this._i          = 0
   this._transforms = []
   this._trCache    = {}
+
+  if (typeof this._cwd !== 'string') {
+    throw new Error('glslify-deps: cwd must be a string path')
+  }
 }
 
 /**
@@ -87,11 +91,11 @@ Depper.prototype.add = function(filename, src, done) {
     , entry: this._i === 1
   }
 
-  this.emit('file', filename)
   this._deps.push(dep)
   this.getTransformsForFile(filename, function(err, trs) {
     if (err) return done(err)
 
+    self.emit('file', filename)
     self.applyTransforms(filename, src, trs, function(err, src) {
       if (err) return done(err)
 
@@ -99,7 +103,7 @@ Depper.prototype.add = function(filename, src, done) {
       extractPreprocessors()
       resolveImports(function(err) {
         setTimeout(function() {
-          done(err, !err && self._deps)
+          done && done(err, !err && self._deps)
         })
       })
     })
@@ -159,21 +163,6 @@ Depper.prototype.add = function(filename, src, done) {
  *   `package.json` file, albeit after any transforms you specified using
  *   `depper.transform`.
  *
- * Transforms are specified differently here however. Keys are mapped to
- * package names, and the values to options. If you don't need options, you
- * should just pass in `true`:
- *
- * {
- *   "name": "hi-cabbibo",
- *   "version": "1.0.0",
- *   "glslify": {
- *     "transform": {
- *       "glslify-hex": true,
- *       "glslify-min": { "mangle": true }
- *     }
- *   }
- * }
- *
  * @param {String} filename The absolute path of the file in question.
  */
 Depper.prototype.getTransformsForFile = function(filename, done) {
@@ -210,11 +199,18 @@ Depper.prototype.getTransformsForFile = function(filename, done) {
     var transforms = (
          pkgjson['glslify']
       && pkgjson['glslify']['transform']
-      || {}
+      || []
     )
 
-    transforms = Object.keys(transforms).map(function(key) {
-      return { tr: key, opts: transforms[key], name: key }
+    transforms = transforms.map(function(key) {
+      var transform = Array.isArray(key)
+        ? key
+        : [key, {}]
+
+      var key = transform[0]
+      var opt = transform[1]
+
+      return { tr: key, opts: opt, name: key }
     }).map(function(tr) {
       tr.tr = self.resolveTransform(tr.tr)
       return tr

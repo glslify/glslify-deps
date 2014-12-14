@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "glsl-random": "0.0.4",
+    "glslify-hex": "git://github.com/hughsk/glslify-hex#2.0.0",
     "tape": "^3.0.2"
   }
 }

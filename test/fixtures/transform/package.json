@@ -1,7 +1,5 @@
 {
   "glslify": {
-    "transform": {
-      "glslify-hex": true
-    }
+    "transform": ["glslify-hex"]
   }
 }
