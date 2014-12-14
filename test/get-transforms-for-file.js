@@ -34,3 +34,10 @@ test('getTransformsForFile: package.json', function(t) {
     })
   })
 })
+
+test('getTransformsForFile(): errors before .add()', function(t) {
+  deps().getTransformsForFile(fixture, function(err, transforms) {
+    t.ok(err)
+    t.end()
+  })
+})

@@ -1,0 +1,9 @@
+{
+  "glslify": {
+    "transform": [
+      ["./transform", {
+        "hello": "world"
+      }]
+    ]
+  }
+}

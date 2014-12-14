@@ -19,12 +19,15 @@ module.exports = Depper
  * @param {String} cwd The root directory of your shader. Defaults to process.cwd()
  */
 inherits(Depper, Emitter)
-function Depper(cwd) {
-  if (!(this instanceof Depper)) return new Depper(cwd)
+function Depper(opts) {
+  if (!(this instanceof Depper)) return new Depper(opts)
   Emitter.call(this)
 
+  opts = typeof opts === 'string' ? { cwd: opts } : opts
+  opts = opts || {}
+
   this._deps       = []
-  this._cwd        = cwd || process.cwd()
+  this._cwd        = opts.cwd || process.cwd()
   this._cache      = {}
   this._i          = 0
   this._transforms = []

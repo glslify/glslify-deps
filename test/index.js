@@ -9,3 +9,7 @@ require('./add')
 
 // Events
 require('./on-file')
+
+// "Scenarios"
+require('./invalid-package')
+require('./transform-opts')
