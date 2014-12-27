@@ -11,7 +11,7 @@ test('getTransformsForFile: package.json', function(t) {
   var src = fs.readFileSync(fixture, 'utf8')
   var dep = deps()
 
-  dep.add(fixture, src, function(err, deps) {
+  dep.add(fixture, function(err, deps) {
     if (err) return t.fail(err.message)
 
     t.plan(5)

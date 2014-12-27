@@ -7,7 +7,7 @@ var fixture = path.resolve(__dirname, 'fixtures/invalid-package/index.glsl')
 var pkgjson = path.resolve(__dirname, 'fixtures/invalid-package/package.json')
 
 test('invalid package.json', function(t) {
-  deps().add(fixture, fs.readFileSync(fixture, 'utf8'), function(err, deps) {
+  deps().add(fixture, function(err, deps) {
     t.ok(err, 'error reported')
 
     try {

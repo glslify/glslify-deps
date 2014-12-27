@@ -12,7 +12,7 @@ test('.transform(string)', function(t) {
   var depper = deps()
 
   depper.transform('glslify-hex')
-  depper.add(fixture, src, function(err, deps) {
+  depper.add(fixture, function(err, deps) {
     if (err) return t.ifError(err)
     t.notEqual(deps[0].source, src, 'source was transformed')
     t.end()
@@ -27,7 +27,7 @@ test('.transform(fn)', function(t) {
     return done(null, src.toUpperCase())
   })
 
-  depper.add(fake, src, function(err, deps) {
+  depper.add(fake, function(err, deps) {
     if (err) return t.ifError(err)
     t.equal(deps[0].source, src.toUpperCase(), 'source was transformed')
     t.end()
@@ -45,7 +45,7 @@ test('.transform(fn, opts)', function(t) {
     return done(null, '//'+JSON.stringify(opts))
   }, opts)
 
-  depper.add(fake, src, function(err, deps) {
+  depper.add(fake, function(err, deps) {
     if (err) return t.ifError(err)
     t.equal(deps[0].source, '//'+JSON.stringify(opts), 'source was transformed')
     t.end()

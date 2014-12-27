@@ -13,10 +13,9 @@ test('on("file")', function(t) {
 
   t.plan(3)
 
-  depper.add(fixture, fs.readFileSync(fixture, 'utf8'))
   depper.on('file', function(file) {
     var idx = expected.indexOf(file)
     if (idx !== -1) expected.splice(idx, 1)
     t.ok(idx !== -1, 'matched: ' + file)
-  })
+  }).add(fixture)
 })

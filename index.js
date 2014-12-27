@@ -32,6 +32,10 @@ function Depper(opts) {
   this._i          = 0
   this._transforms = []
   this._trCache    = {}
+  this._fileCache  = opts.files || {}
+
+  this.readFile = cacheWrap(opts.readFile || defaultRead, this._fileCache)
+  this.resolve  = opts.resolve || glslResolve
 
   if (typeof this._cwd !== 'string') {
     throw new Error('glslify-deps: cwd must be a string path')
@@ -79,8 +83,8 @@ Depper.prototype.transform = function(transform, opts) {
  * resolved, and will include an array of dependencies discovered
  * so far as its second argument.
  */
-Depper.prototype.add = function(filename, src, done) {
-  var basedir = path.dirname(filename)
+Depper.prototype.add = function(filename, done) {
+  var basedir = path.dirname(filename = path.resolve(filename))
   var cache   = this._cache
   var self    = this
   var exports = []
@@ -95,18 +99,22 @@ Depper.prototype.add = function(filename, src, done) {
   }
 
   this._deps.push(dep)
-  this.getTransformsForFile(filename, function(err, trs) {
+  this.readFile(filename, function(err, src) {
     if (err) return done(err)
 
-    self.emit('file', filename)
-    self.applyTransforms(filename, src, trs, function(err, src) {
+    self.getTransformsForFile(filename, function(err, trs) {
       if (err) return done(err)
 
-      dep.source = src
-      extractPreprocessors()
-      resolveImports(function(err) {
-        setTimeout(function() {
-          done && done(err, !err && self._deps)
+      self.emit('file', filename)
+      self.applyTransforms(filename, src, trs, function(err, src) {
+        if (err) return done(err)
+
+        dep.source = src
+        extractPreprocessors()
+        resolveImports(function(err) {
+          setTimeout(function() {
+            done && done(err, !err && self._deps)
+          })
         })
       })
     })
@@ -135,21 +143,18 @@ Depper.prototype.add = function(filename, src, done) {
     map(imports, 10, function(imp, next) {
       var importName = imp.split(/\s*,\s*/).shift()
 
-      glslResolve(importName, { basedir: basedir }, function(err, resolved) {
+      self.resolve(importName, { basedir: basedir }, function(err, resolved) {
         if (err) return next(err)
 
-        fs.readFile(resolved, 'utf8', function(err, src) {
-          if (err) return next(err)
-          if (cache[resolved]) {
-            dep.deps[importName] = cache[resolved].id
-            return next()
-          }
+        if (cache[resolved]) {
+          dep.deps[importName] = cache[resolved].id
+          return next()
+        }
 
-          cache[resolved] = self.add(resolved, src, function(err) {
-            if (err) return next(err)
-            dep.deps[importName] = cache[resolved].id
-            next()
-          })
+        cache[resolved] = self.add(resolved, function(err) {
+          if (err) return next(err)
+          dep.deps[importName] = cache[resolved].id
+          next()
         })
       })
     }, resolved)
@@ -193,33 +198,36 @@ Depper.prototype.getTransformsForFile = function(filename, done) {
     if (err) return done(err)
 
     var pkg = path.join(found, 'package.json')
-    var pkgjson = fs.readFileSync(pkg, 'utf8')
 
-    try {
-      pkgjson = JSON.parse(pkgjson)
-    } catch(e) { return done(e) }
+    self.readFile(pkg, function(err, pkgjson) {
+      if (err) return done(err)
 
-    var transforms = (
-         pkgjson['glslify']
-      && pkgjson['glslify']['transform']
-      || []
-    )
+      try {
+        pkgjson = JSON.parse(pkgjson)
+      } catch(e) { return done(e) }
 
-    transforms = transforms.map(function(key) {
-      var transform = Array.isArray(key)
-        ? key
-        : [key, {}]
+      var transforms = (
+           pkgjson['glslify']
+        && pkgjson['glslify']['transform']
+        || []
+      )
 
-      var key = transform[0]
-      var opt = transform[1]
+      transforms = transforms.map(function(key) {
+        var transform = Array.isArray(key)
+          ? key
+          : [key, {}]
 
-      return { tr: key, opts: opt, name: key }
-    }).map(function(tr) {
-      tr.tr = self.resolveTransform(tr.tr)
-      return tr
+        var key = transform[0]
+        var opt = transform[1]
+
+        return { tr: key, opts: opt, name: key }
+      }).map(function(tr) {
+        tr.tr = self.resolveTransform(tr.tr)
+        return tr
+      })
+
+      register(transforms)
     })
-
-    register(transforms)
   })
 
   function register(transforms) {
@@ -287,4 +295,28 @@ function glslifyExport(data) {
 
 function glslifyImport(data) {
   return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^\)]+)\)/.exec(data)
+}
+
+function defaultRead(src, done) {
+  fs.readFile(src, 'utf8', done)
+}
+
+function cacheWrap(read, cache) {
+  // resolve all cached files such that they match
+  // all of the paths glslify handles, which are otherwise
+  // absolute
+  cache = Object.keys(cache).reduce(function(newCache, file) {
+    newCache[path.resolve(file)] = cache[file]
+    return newCache
+  }, {})
+
+  return function readFromCache(filename, done) {
+    if (!cache[filename]) {
+      return read(filename, done)
+    }
+
+    process.nextTick(function() {
+      done(null, cache[filename])
+    })
+  }
 }

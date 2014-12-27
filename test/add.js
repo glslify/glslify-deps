@@ -10,11 +10,11 @@ test('.add(): cache', function(t) {
   var dep = deps()
 
   t.ok(!Object.keys(dep._cache).length, 'cache starts empty')
-  dep.add(fixture, src, function(err, deps1) {
+  dep.add(fixture, function(err, deps1) {
     if (err) return t.ifError(err)
 
     t.ok(Object.keys(dep._cache).length >= 2, 'cache populated')
-    dep.add(fixture, src, function(err, deps2) {
+    dep.add(fixture, function(err, deps2) {
       if (err) return t.ifError(err)
 
       t.deepEqual(deps1, deps2, 'deps are equivalent')
