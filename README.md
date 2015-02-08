@@ -1,18 +1,45 @@
 # glslify-deps
 
-**WORK IN PROGRESS. Currently useless, more to come soon.**
-
 Walk the dependency graph of a [glslify](http://github.com/stackgl/glslify)
 shader.
-
-Splitting this out into a separate package makes the final bundling process
-a lot simpler internally, but also gives you plenty of flexibility to muck
-with the shader before it hits the bundler.
 
 `glslify-deps` is responsible for resolving your shader's dependencies and
 applying their transforms before the actual source modification occurs. You may
 notice some parallels here with [browserify](http://browserify.org)'s
 [module-deps](http://github.com/substack/module-deps) package.
+
+While `glslify-deps` is an "internal" package for `glslify`, it may be useful
+to use this package directly in specific cases, e.g. building a file tree
+server-side but bundling the final shader on the client.
+
+## Module API
+
+### `depper = glslifyDeps([options])`
+
+Creates a fresh `glslify-deps` instance. Accepts the following options:
+
+* `cwd`: the current working directory to resolve relative file paths from.
+* `readFile`: pass in a custom function reading files.
+* `resolve`: pass in a custom function for resolving require calls. It has
+  the same signature as [glsl-resolve](http://github.com/hughsk/glsl-resolve).
+* `files`: a filename/source object mapping of files to prepopulate
+  the file cache with. Useful for overriding particular file paths manually,
+  most notably the "entry" file.
+
+### `depper.transform(transform, [options])`
+
+Adds a new transform – should be used before calling `depper.add`.
+
+`transform` may either be a string (which is resolved like a `require` call),
+or a function. More information on transforms can be found below.
+
+### `depper.add(filename, [callback])`
+
+Adds a new file to the dependency graph
+
+### `depper.on('file', cb(filename))`
+
+Emitted whenever a new file has been included in the dependency graph.
 
 ## Example Output
 
