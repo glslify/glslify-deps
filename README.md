@@ -111,8 +111,7 @@ function makeFloat(n) {
 
 ## Transforms in `package.json`
 
-Transforms now support options specified in `package.json` using a cleaner
-syntax:
+Transforms now support options specified in `package.json`:
 
 ``` json
 {
