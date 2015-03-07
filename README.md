@@ -117,10 +117,10 @@ syntax:
 ``` json
 {
   "glslify": {
-    "transform": {
-      "glslify-hex": true,
-      "glslify-optimize": { "mangle": true }
-    }
+    "transform": [
+       "glslify-hex",
+      ["glslify-optimize", { "mangle": true }]
+    ]
   }
 }
 ```
