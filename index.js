@@ -34,6 +34,8 @@ function Depper(opts) {
   this._trCache    = {}
   this._fileCache  = opts.files || {}
 
+  this._globalTransforms = []
+
   this.readFile = cacheWrap(opts.readFile || defaultRead, this._fileCache)
   this.resolve  = opts.resolve || glslResolve
 
@@ -63,8 +65,16 @@ function Depper(opts) {
  */
 Depper.prototype.transform = function(transform, opts) {
   var name = typeof transform === 'string' ? transform : null
+  var list = opts && opts.global
+    ? this._globalTransforms
+    : this._transforms
+
+  // post transforms are ignored by glslify-deps, to be handled
+  // by glslify after the file has been bundled.
+  if (opts && opts.post) return
+
   transform = this.resolveTransform(transform)
-  this._transforms.push({ tr: transform, opts: opts, name: name })
+  list.push({ tr: transform, opts: opts, name: name })
 
   return this
 }
@@ -220,6 +230,11 @@ Depper.prototype.getTransformsForFile = function(filename, done) {
         var key = transform[0]
         var opt = transform[1]
 
+        if (opt) {
+          delete opt.global
+          delete opt.post
+        }
+
         return { tr: key, opts: opt, name: key }
       }).map(function(tr) {
         tr.tr = self.resolveTransform(tr.tr)
@@ -231,7 +246,9 @@ Depper.prototype.getTransformsForFile = function(filename, done) {
   })
 
   function register(transforms) {
-    done(null, trCache[fileDir] = trLocal.concat(transforms))
+    done(null, trCache[fileDir] = trLocal
+      .concat(transforms)
+      .concat(self._globalTransforms))
   }
 }
 
@@ -280,7 +297,6 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
     var opts = tr.opts
 
     if (!opts || typeof opts !== 'object') opts = {}
-
     tr.tr(filename, updated, tr.opts, next)
   }
 }

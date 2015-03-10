@@ -1,5 +1,12 @@
 {
   "glslify": {
-    "transform": ["glslify-hex"]
+    "transform": [
+      ["glslify-hex", {
+        "post": true,
+        "global": true,
+        "option-1": true,
+        "option-2": 42
+      }]
+    ]
   }
 }
