@@ -297,7 +297,7 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
     var opts = tr.opts
 
     if (!opts || typeof opts !== 'object') opts = {}
-    tr.tr(filename, updated, tr.opts, next)
+    tr.tr(filename, updated+'', tr.opts, next)
   }
 }
 
