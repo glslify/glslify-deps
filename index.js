@@ -71,7 +71,7 @@ Depper.prototype.transform = function(transform, opts) {
 
   // post transforms are ignored by glslify-deps, to be handled
   // by glslify after the file has been bundled.
-  if (opts && opts.post) return
+  if (opts && opts.post) return this
 
   transform = this.resolveTransform(transform)
   list.push({ tr: transform, opts: opts, name: name })
