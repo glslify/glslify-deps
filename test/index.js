@@ -1,6 +1,7 @@
 // Public API
 require('./transform')
 require('./add')
+require('./inline')
 require('./files')
 
 // "Mostly" internal functions

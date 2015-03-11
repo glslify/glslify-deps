@@ -9,6 +9,9 @@ var path     = require('path')
 var glslResolve = require('glsl-resolve')
 var nodeResolve = require('resolve')
 
+var inlineName   = '__INLINE__' + Math.random()
+var inlineSource = ''
+
 module.exports = Depper
 
 /**
@@ -36,12 +39,22 @@ function Depper(opts) {
 
   this._globalTransforms = []
 
-  this.readFile = cacheWrap(opts.readFile || defaultRead, this._fileCache)
-  this.resolve  = opts.resolve || glslResolve
+  this._readFile = cacheWrap(opts.readFile || defaultRead, this._fileCache)
+  this.resolve   = opts.resolve || glslResolve
 
   if (typeof this._cwd !== 'string') {
     throw new Error('glslify-deps: cwd must be a string path')
   }
+}
+
+Depper.prototype.inline = function(source, basedir, done) {
+  var inlineFile = path.resolve(basedir || process.cwd(), inlineName)
+
+  inlineSource = source
+
+  this.add(inlineFile, function(err, tree) {
+    done && done(err, !err && tree)
+  })
 }
 
 /**
@@ -169,6 +182,13 @@ Depper.prototype.add = function(filename, done) {
       })
     }, resolved)
   }
+}
+
+Depper.prototype.readFile = function(filename, done) {
+  if (path.basename(filename) !== inlineName)
+    return this._readFile(filename, done)
+
+  return done(null, inlineSource)
 }
 
 /**

@@ -35,7 +35,14 @@ or a function. More information on transforms can be found below.
 
 ### `depper.add(filename, [callback])`
 
-Adds a new file to the dependency graph
+Adds a new file to the dependency graph.
+
+### `depper.inline(source, basedir, [callback])`
+
+Adds a new inline file to the dependency graph, where `source` is the GLSL
+source to include and `basedir` is the directory to pretend it's being
+created in. A `basedir` is required to properly resolve requires and transforms,
+and defaults to `process.cwd()`.
 
 ### `depper.on('file', cb(filename))`
 
