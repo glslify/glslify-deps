@@ -166,6 +166,10 @@ Depper.prototype.add = function(filename, done) {
     map(imports, 10, function(imp, next) {
       var importName = imp.split(/\s*,\s*/).shift()
 
+      importName = importName.trim()
+      importName = importName.replace(/^'|'$/g, '')
+      importName = importName.replace(/^"|"$/g, '')
+
       self.resolve(importName, { basedir: basedir }, function(err, resolved) {
         if (err) return next(err)
 

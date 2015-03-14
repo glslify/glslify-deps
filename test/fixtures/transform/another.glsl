@@ -1,4 +1,4 @@
-#pragma glslify: fake = require(glsl-fake)
+#pragma glslify: fake = require( 'glsl-fake' )
 
 vec3 hello() {
   return #FFFFFF;
