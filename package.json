@@ -20,5 +20,20 @@
     "glslify-hex": "^2.0.0",
     "istanbul": "^0.3.5",
     "tape": "^3.0.2"
-  }
+  },
+  "description": "Walk the dependency graph of a [glslify](http://github.com/stackgl/glslify) shader.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stackgl/glslify-deps.git"
+  },
+  "author": "Hugh Kennedy <hughskennedy@gmail.com> (http://hughsk.io/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stackgl/glslify-deps/issues"
+  },
+  "homepage": "https://github.com/stackgl/glslify-deps#readme"
 }
