@@ -9,7 +9,7 @@
     "events": "^1.0.2",
     "findup": "^0.1.5",
     "glsl-resolve": "0.0.1",
-    "glsl-tokenizer": "git://github.com/stackgl/glsl-tokenizer#2.0.0",
+    "glsl-tokenizer": "^2.0.0",
     "graceful-fs": "^3.0.4",
     "inherits": "^2.0.1",
     "map-limit": "0.0.1",
@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "glsl-random": "0.0.4",
-    "glslify-hex": "git://github.com/hughsk/glslify-hex#2.0.0",
+    "glslify-hex": "^2.0.0",
     "istanbul": "^0.3.5",
     "tape": "^3.0.2"
   }
