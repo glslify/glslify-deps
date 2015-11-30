@@ -21,7 +21,7 @@
     "istanbul": "^0.3.5",
     "tape": "^3.0.2"
   },
-  "description": "Walk the dependency graph of a [glslify](http://github.com/stackgl/glslify) shader.",
+  "description": "Walk the dependency graph of a glslify shader.",
   "main": "index.js",
   "directories": {
     "test": "test"
