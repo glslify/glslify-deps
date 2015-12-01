@@ -10,7 +10,7 @@
     "findup": "^0.1.5",
     "glsl-resolve": "0.0.1",
     "glsl-tokenizer": "^2.0.0",
-    "graceful-fs": "^3.0.4",
+    "graceful-fs": "^4.1.2",
     "inherits": "^2.0.1",
     "map-limit": "0.0.1",
     "resolve": "^1.0.0"
