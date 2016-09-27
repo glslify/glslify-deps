@@ -14,6 +14,17 @@ server-side but bundling the final shader on the client.
 
 ## Module API
 
+There is an asynchronous and a synchronous API:
+
+``` js
+var glslifyDeps = require('glslify-deps')
+var glslifyDepsSync = require('glslify-deps/sync')
+```
+
+The asynchronous API is documented below. For every method in the asychronous
+API, instead of a `callback(err, result)`, the result is available as the return
+value of the method.
+
 ### `depper = glslifyDeps([options])`
 
 Creates a fresh `glslify-deps` instance. Accepts the following options:
@@ -73,13 +84,24 @@ Emitted whenever a new file has been included in the dependency graph.
 
 The transform API has changed since glslify 1.0 to make it more "vanilla".
 
+With the asynchronous API, transforms have this signature:
+
 ``` javascript
 module.exports = function(file, source, options, done) {
   done(null, source.toUpperCase())
 }
 ```
 
-As an example, here's [glslify-hex](http://github.com/hughsk/glslify-hex)
+and using the synchronous API, transforms have this signature:
+
+``` javascript
+module.exports.sync = function(file, source, options) {
+  return source.toUpperCase()
+}
+```
+
+For an example that is compatible with both the async and sync APIs, here's
+[glslify-hex](http://github.com/hughsk/glslify-hex)
 rewritten using the new API:
 
 ``` javascript
@@ -89,6 +111,7 @@ var regexLong  = /#([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})?/gi
 var regexShort = /#([a-f0-9])([a-f0-9])([a-f0-9])([a-f0-9])?/gi
 
 module.exports = transform
+module.exports.sync = transform
 
 function transform(filename, src, opts, done) {
   src = src.replace(regexShort, function(whole, r, g, b, a) {
@@ -106,7 +129,8 @@ function transform(filename, src, opts, done) {
       : 'vec4('+[r,g,b,a].join(',')+')'
   })
 
-  done(null, src)
+  if (typeof done === 'function') done(null, src)
+  return src
 }
 
 function makeFloat(n) {
