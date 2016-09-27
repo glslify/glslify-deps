@@ -15,3 +15,6 @@ require('./on-file')
 // "Scenarios"
 require('./invalid-package')
 require('./transform-opts')
+
+// Synchronous API
+require('./index-sync.js')
