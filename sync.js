@@ -157,7 +157,8 @@ Depper.prototype.add = function(filename) {
       if (cache[resolved]) {
         dep.deps[importName] = cache[resolved].id
       }
-      cache[resolved] = self.add(resolved)
+      var i = self._i
+      cache[resolved] = self.add(resolved)[i]
       dep.deps[importName] = cache[resolved].id
     })
   }
