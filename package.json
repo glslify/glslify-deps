@@ -6,8 +6,8 @@
     "coverage": "istanbul cover test/index.js && http-server coverage/lcov-report/glslify-deps"
   },
   "dependencies": {
+    "@choojs/findup": "^0.2.0",
     "events": "^1.0.2",
-    "findup": "^0.1.5",
     "glsl-resolve": "0.0.1",
     "glsl-tokenizer": "^2.0.0",
     "graceful-fs": "^4.1.2",
