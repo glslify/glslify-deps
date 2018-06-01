@@ -1,6 +1,6 @@
 {
   "name": "glslify-deps",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "scripts": {
     "test": "node test | tap-spec",
     "coverage": "istanbul cover test/index.js && http-server coverage/lcov-report/glslify-deps"
