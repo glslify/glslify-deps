@@ -1,9 +1,9 @@
 var tokenize = require('glsl-tokenizer/string')
+var findup   = require('@choojs/findup')
 var fs       = require('graceful-fs')
 var map      = require('map-limit')
 var inherits = require('inherits')
 var Emitter  = require('events/')
-var findup   = require('findup')
 var path     = require('path')
 
 var glslResolve = require('glsl-resolve')
