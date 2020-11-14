@@ -1,13 +1,10 @@
 var tokenize = require('glsl-tokenizer/string')
 var findup   = require('@choojs/findup').sync
 var fs       = require('graceful-fs')
-var map      = require('map-limit')
 var inherits = require('inherits')
-var Emitter  = require('events/')
 var path     = require('path')
-var cacheWrap = require('./cacheWrap');
-var glslResolve = require('glsl-resolve').sync
 var nodeResolve = require('resolve').sync
+var Depper = require('./depper')
 var {
   glslifyPreprocessor,
   glslifyExport,
@@ -18,7 +15,7 @@ var {
 var inlineName   = genInlineName()
 var inlineSource = ''
 
-module.exports = Depper
+module.exports = DepperSync
 
 /**
  * Creates a new instance of glslify-deps. Generally, you'll
@@ -27,33 +24,13 @@ module.exports = Depper
  * @class
  * @param {String} cwd The root directory of your shader. Defaults to process.cwd()
  */
-inherits(Depper, Emitter)
-function Depper(opts) {
-  if (!(this instanceof Depper)) return new Depper(opts)
-  Emitter.call(this)
-
-  opts = typeof opts === 'string' ? { cwd: opts } : opts
-  opts = opts || {}
-
-  this._deps       = []
-  this._cwd        = opts.cwd || process.cwd()
-  this._cache      = {}
-  this._i          = 0
-  this._transforms = []
-  this._trCache    = {}
-  this._fileCache  = opts.files || {}
-
-  this._globalTransforms = []
-
-  this._readFile = cacheWrap(opts.readFileSync || defaultRead, this._fileCache)
-  this.resolve   = opts.resolve || glslResolve
-
-  if (typeof this._cwd !== 'string') {
-    throw new Error('glslify-deps: cwd must be a string path')
-  }
+inherits(DepperSync, Depper)
+function DepperSync(opts) {
+  if (!(this instanceof DepperSync)) return new DepperSync(opts)
+  Depper.call(this, opts)
 }
 
-Depper.prototype.inline = function(source, basedir) {
+DepperSync.prototype.inline = function(source, basedir) {
   var inlineFile = path.resolve(basedir || process.cwd(), inlineName)
 
   inlineSource = source
@@ -81,7 +58,7 @@ Depper.prototype.inline = function(source, basedir) {
  * @param {String|Function} transform
  * @param {Object} opts
  */
-Depper.prototype.transform = function(transform, opts) {
+DepperSync.prototype.transform = function(transform, opts) {
   var name = typeof transform === 'string' ? transform : null
   var list = opts && opts.global
     ? this._globalTransforms
@@ -108,7 +85,7 @@ Depper.prototype.transform = function(transform, opts) {
  *
  * Returns an array of dependencies discovered so far as its second argument.
  */
-Depper.prototype.add = function(filename) {
+DepperSync.prototype.add = function(filename) {
   var basedir = path.dirname(filename = path.resolve(filename))
   var cache   = this._cache
   var self    = this
@@ -170,7 +147,7 @@ Depper.prototype.add = function(filename) {
   }
 }
 
-Depper.prototype.readFile = function(filename) {
+DepperSync.prototype.readFile = function(filename) {
   if (path.basename(filename) !== inlineName)
     return this._readFile(filename)
 
@@ -185,11 +162,11 @@ Depper.prototype.readFile = function(filename) {
  * - shader files in node_modules do not get local transforms
  * - all files will apply transforms specified in `glslify.transform` in your
  *   `package.json` file, albeit after any transforms you specified using
- *   `depper.transform`.
+ *   `depperSync.transform`.
  *
  * @param {String} filename The absolute path of the file in question.
  */
-Depper.prototype.getTransformsForFile = function(filename) {
+DepperSync.prototype.getTransformsForFile = function(filename) {
   var self  = this
   var entry = this._deps[0]
 
@@ -261,7 +238,7 @@ Depper.prototype.getTransformsForFile = function(filename) {
  *
  * @param {String|Function} transform
  */
-Depper.prototype.resolveTransform = function(transform) {
+DepperSync.prototype.resolveTransform = function(transform) {
   if (typeof transform === 'string') {
     transform = nodeResolve(transform, {
       basedir: this._cwd
@@ -290,15 +267,11 @@ Depper.prototype.resolveTransform = function(transform) {
  *
  * Returns the transformed source string.
  */
-Depper.prototype.applyTransforms = function(filename, src, transforms) {
+DepperSync.prototype.applyTransforms = function(filename, src, transforms) {
   transforms.forEach(function (tr) {
     var opts = tr.opts
     if (!opts || typeof opts !== 'object') opts = {}
     src = tr.tr(filename, src+'', tr.opts)
   })
   return src
-}
-
-function defaultRead(src) {
-  return fs.readFileSync(src, 'utf8')
 }
