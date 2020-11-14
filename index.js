@@ -1,6 +1,4 @@
 var tokenize = require('glsl-tokenizer/string')
-var findup   = require('@choojs/findup')
-var fs       = require('graceful-fs')
 var map      = require('map-limit')
 var inherits = require('inherits')
 var path     = require('path')
