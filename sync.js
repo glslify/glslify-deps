@@ -79,7 +79,7 @@ DepperSync.prototype.add = function(filename) {
     }
   }
 
-  function resolveImports(resolved) {
+  function resolveImports() {
     imports.forEach(function (imp) {
       var importName = imp.split(/\s*,\s*/).shift()
 
