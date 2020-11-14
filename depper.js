@@ -63,6 +63,41 @@ Depper.prototype.inline = function(source, basedir, done) {
   }
 }
 
+/**
+ * Adds a transform to use on your local dependencies.
+ * Note that this should be used before calling `add`.
+ *
+ * Transforms are handled using a different API to browserify, e.g.:
+ *
+ * ``` js
+ * module.exports = function transform(filename, src, opts, done) {
+ *   done(null, src.toUpperCase())
+ * }
+ * ```
+ *
+ * Where `filename` is the absolute file path, `src` is the shader source
+ * as a string, `opts` is an options object for configuration, and `done`
+ * is a callback which takes the transformed shader source.
+ *
+ * @param {String|Function} transform
+ * @param {Object} opts
+ */
+Depper.prototype.transform = function(transform, opts) {
+  var name = typeof transform === 'string' ? transform : null
+  var list = opts && opts.global
+    ? this._globalTransforms
+    : this._transforms
+
+  // post transforms are ignored by glslify-deps, to be handled
+  // by glslify after the file has been bundled.
+  if (opts && opts.post) return this
+
+  transform = this.resolveTransform(transform)
+  list.push({ tr: transform, opts: opts, name: name })
+
+  return this
+}
+
 function createDefaultRead(async) {
   if (async) {
     return function defaultRead(src, done) {

@@ -27,42 +27,6 @@ function DepperSync(opts) {
 }
 
 /**
- * Adds a transform to use on your local dependencies.
- * Note that this should be used before calling `add`.
- *
- * Transforms are handled using a different API to browserify, e.g.:
- *
- * ``` js
- * exports.sync = function transform(filename, src, opts) {
- *   return src.toUpperCase()
- * }
- * ```
- *
- * This is also different from the async transform API.
- *
- * Where `filename` is the absolute file path, `src` is the shader source
- * as a string, `opts` is an options object for configuration.
- *
- * @param {String|Function} transform
- * @param {Object} opts
- */
-DepperSync.prototype.transform = function(transform, opts) {
-  var name = typeof transform === 'string' ? transform : null
-  var list = opts && opts.global
-    ? this._globalTransforms
-    : this._transforms
-
-  // post transforms are ignored by glslify-deps, to be handled
-  // by glslify after the file has been bundled.
-  if (opts && opts.post) return this
-
-  transform = this.resolveTransform(transform)
-  list.push({ tr: transform, opts: opts, name: name })
-
-  return this
-}
-
-/**
  * Adds a shader file to the graph, including its dependencies
  * which are resolved in this step. Transforms are also applied
  * in the process too, as they may potentially add or remove dependent
