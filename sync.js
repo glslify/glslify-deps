@@ -3,7 +3,6 @@ var findup   = require('@choojs/findup').sync
 var fs       = require('graceful-fs')
 var inherits = require('inherits')
 var path     = require('path')
-var nodeResolve = require('resolve').sync
 var Depper = require('./depper')
 var {
   glslifyPreprocessor,
@@ -179,31 +178,6 @@ DepperSync.prototype.getTransformsForFile = function(filename) {
       .concat(transforms)
       .concat(self._globalTransforms)
   }
-}
-
-/**
- * Resolves a transform.
- *
- * Functions are retained as-is.
- * Strings are resolved using node's `require` resolution algorithm,
- * and then required directly.
- *
- * @param {String|Function} transform
- */
-DepperSync.prototype.resolveTransform = function(transform) {
-  if (typeof transform === 'string') {
-    transform = nodeResolve(transform, {
-      basedir: this._cwd
-    })
-
-    var m = require(transform)
-    if (!m || typeof m.sync !== 'function') {
-      throw new Error('transform ' + transform + ' does not provide a'
-        + ' synchronous interface')
-    }
-    transform = m.sync
-  }
-  return transform
 }
 
 /**

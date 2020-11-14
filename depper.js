@@ -3,6 +3,7 @@ var fs       = require('graceful-fs')
 var Emitter  = require('events/')
 var inherits = require('inherits')
 var cacheWrap = require('./cacheWrap')
+var nodeResolve = require('resolve')
 var glslResolve = require('glsl-resolve')
 
 var {
@@ -96,6 +97,34 @@ Depper.prototype.transform = function(transform, opts) {
   list.push({ tr: transform, opts: opts, name: name })
 
   return this
+}
+
+/**
+ * Resolves a transform.
+ *
+ * Functions are retained as-is.
+ * Strings are resolved using node's `require` resolution algorithm,
+ * and then required directly.
+ *
+ * @param {String|Function} transform
+ */
+Depper.prototype.resolveTransform = function(transform) {
+  if (typeof transform === 'string') {
+    transform = nodeResolve.sync(transform, {
+      basedir: this._cwd
+    })
+    if (this._async) {
+      transform = require(transform)
+    } else {
+      var m = require(transform)
+      if (!m || typeof m.sync !== 'function') {
+        throw new Error('transform ' + transform + ' does not provide a'
+          + ' synchronous interface')
+      }
+      transform = m.sync
+    }
+  }
+  return transform
 }
 
 function createDefaultRead(async) {

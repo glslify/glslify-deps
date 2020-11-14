@@ -4,9 +4,7 @@ var fs       = require('graceful-fs')
 var map      = require('map-limit')
 var inherits = require('inherits')
 var path     = require('path')
-var nodeResolve = require('resolve')
 var Depper = require('./depper')
-
 var {
   glslifyPreprocessor,
   glslifyExport,
@@ -210,27 +208,6 @@ DepperAsync.prototype.getTransformsForFile = function(filename, done) {
       .concat(transforms)
       .concat(self._globalTransforms))
   }
-}
-
-/**
- * Resolves a transform.
- *
- * Functions are retained as-is.
- * Strings are resolved using node's `require` resolution algorithm,
- * and then required directly.
- *
- * @param {String|Function} transform
- */
-DepperAsync.prototype.resolveTransform = function(transform) {
-  if (typeof transform === 'string') {
-    transform = nodeResolve.sync(transform, {
-      basedir: this._cwd
-    })
-
-    transform = require(transform)
-  }
-
-  return transform
 }
 
 /**
