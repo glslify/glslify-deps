@@ -5,11 +5,17 @@ var map      = require('map-limit')
 var inherits = require('inherits')
 var Emitter  = require('events/')
 var path     = require('path')
-
 var glslResolve = require('glsl-resolve')
 var nodeResolve = require('resolve')
+var cacheWrap = require('./cacheWrap');
+var {
+  glslifyPreprocessor,
+  glslifyExport,
+  glslifyImport,
+  genInlineName,
+} = require('./common.js')
 
-var inlineName   = '__INLINE__' + Math.random()
+var inlineName   = genInlineName()
 var inlineSource = ''
 
 module.exports = Depper
@@ -39,7 +45,7 @@ function Depper(opts) {
 
   this._globalTransforms = []
 
-  this._readFile = cacheWrap(opts.readFile || defaultRead, this._fileCache)
+  this._readFile = cacheWrap(opts.readFile || defaultRead, this._fileCache, true)
   this.resolve   = opts.resolve || glslResolve
 
   if (typeof this._cwd !== 'string') {
@@ -325,38 +331,6 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
   }
 }
 
-function glslifyPreprocessor(data) {
-  return /#pragma glslify:/.test(data)
-}
-
-function glslifyExport(data) {
-  return /#pragma glslify:\s*export\(([^\)]+)\)/.exec(data)
-}
-
-function glslifyImport(data) {
-  return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^\)]+)\)/.exec(data)
-}
-
 function defaultRead(src, done) {
   fs.readFile(src, 'utf8', done)
-}
-
-function cacheWrap(read, cache) {
-  // resolve all cached files such that they match
-  // all of the paths glslify handles, which are otherwise
-  // absolute
-  cache = Object.keys(cache).reduce(function(newCache, file) {
-    newCache[path.resolve(file)] = cache[file]
-    return newCache
-  }, {})
-
-  return function readFromCache(filename, done) {
-    if (!cache[filename]) {
-      return read(filename, done)
-    }
-
-    process.nextTick(function() {
-      done(null, cache[filename])
-    })
-  }
 }
