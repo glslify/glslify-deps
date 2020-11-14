@@ -209,31 +209,3 @@ DepperAsync.prototype.getTransformsForFile = function(filename, done) {
       .concat(self._globalTransforms))
   }
 }
-
-/**
- * Applies a transform to a string.
- *
- * Note that transforms here are passed in differently to other methods:
- * - `tr.tr` should point to the transform function.
- * - `tr.opts` should contain the options for the transform, if applicable.
- *
- * @param {String} filename The absolute path of the file you're transforming.
- * @param {String} src The shader source you'd like to transform.
- * @param {Array} transforms The transforms you'd like to apply.
- * @param {Function} done(err, transformed)
- */
-DepperAsync.prototype.applyTransforms = function(filename, src, transforms, done) {
-  var i = 0
-
-  next(null, src)
-  function next(err, updated) {
-    if (err) return done(err)
-    if (i >= transforms.length) return done(null, updated)
-
-    var tr = transforms[i++]
-    var opts = tr.opts
-
-    if (!opts || typeof opts !== 'object') opts = {}
-    tr.tr(filename, updated+'', tr.opts, next)
-  }
-}

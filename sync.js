@@ -179,25 +179,3 @@ DepperSync.prototype.getTransformsForFile = function(filename) {
       .concat(self._globalTransforms)
   }
 }
-
-/**
- * Applies a transform to a string.
- *
- * Note that transforms here are passed in differently to other methods:
- * - `tr.tr` should point to the transform function.
- * - `tr.opts` should contain the options for the transform, if applicable.
- *
- * @param {String} filename The absolute path of the file you're transforming.
- * @param {String} src The shader source you'd like to transform.
- * @param {Array} transforms The transforms you'd like to apply.
- *
- * Returns the transformed source string.
- */
-DepperSync.prototype.applyTransforms = function(filename, src, transforms) {
-  transforms.forEach(function (tr) {
-    var opts = tr.opts
-    if (!opts || typeof opts !== 'object') opts = {}
-    src = tr.tr(filename, src+'', tr.opts)
-  })
-  return src
-}
