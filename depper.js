@@ -5,10 +5,15 @@ var inherits = require('inherits')
 var cacheWrap = require('./cacheWrap')
 var nodeResolve = require('resolve')
 var glslResolve = require('glsl-resolve')
+var findup   = require('@choojs/findup')
 
 var {
   genInlineName,
 } = require('./common.js')
+
+var {
+  getTransformsFromPkg,
+} = require('./utils.js')
 
 
 module.exports = Depper
@@ -137,7 +142,7 @@ Depper.prototype.resolveTransform = function(transform) {
  * @param {String} filename The absolute path of the file you're transforming.
  * @param {String} src The shader source you'd like to transform.
  * @param {Array} transforms The transforms you'd like to apply.
- * @param {Function} [done] applies when async true
+ * @param {(err: Error, result: string) => any} [done] Applies when async true
  */
 Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
   if (this._async) {
@@ -161,6 +166,90 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
       src = tr.tr(filename, src+'', tr.opts)
     })
     return src
+  }
+}
+
+/**
+ * Determines which transforms to use for a particular file.
+ * The rules here are the same you see in browserify:
+ *
+ * - your shader files will have your specified transforms applied to them
+ * - shader files in node_modules do not get local transforms
+ * - all files will apply transforms specified in `glslify.transform` in your
+ *   `package.json` file, albeit after any transforms you specified using
+ *   `depper.transform`.
+ *
+ * @param {String} filename The absolute path of the file in question.
+ * @param {(err: Error, transforms: any) => any} [done] Applies when async true
+ */
+Depper.prototype.getTransformsForFile = function(filename, done) {
+  var self  = this
+  var entry = this._deps[0]
+
+  if (!entry) return done(new Error(
+    'getTransformsForFile may only be called after adding your entry file'
+  ))
+
+  var entryDir     = path.dirname(path.resolve(entry.file))
+  var fileDir      = path.dirname(path.resolve(filename))
+  var relative     = path.relative(entryDir, fileDir).split(path.sep)
+  var node_modules = relative.indexOf('node_modules') !== -1
+  var trLocal      = node_modules ? [] : this._transforms
+  var trCache      = this._trCache
+  var pkgName      = 'package.json'
+
+  if (trCache[fileDir]) {
+    if (this._async) {
+      return done(null, trCache[fileDir])
+    } else {
+      return trCache[fileDir]
+    }
+  }
+
+  function register(transforms) {
+    trCache[fileDir] = trLocal
+      .concat(transforms.map(function(tr) {
+        tr.tr = self.resolveTransform(tr.tr)
+        return tr
+      }))
+      .concat(self._globalTransforms);
+    var result = trCache[fileDir]
+    if (self._async) {
+      done(null, result)
+    } else {
+      return result
+    }
+  }
+
+  if (this._async) {
+    findup(fileDir, pkgName, function(err, found) {
+      var notFound = err && err.message === 'not found'
+      if (notFound) return register([])
+      if (err) return done(err)
+
+      var pkg = path.join(found, pkgName)
+
+      self.readFile(pkg, function(err, pkgJson) {
+        if (err) return done(err)
+        var transforms;
+        try {
+          transforms = getTransformsFromPkg(pkgJson)
+        } catch(e) { return done(e) }
+
+        register(transforms)
+      })
+    })
+  } else {
+    try { var found = findup.sync(fileDir, pkgName) }
+    catch (err) {
+      var notFound = err.message === 'not found'
+      if (notFound) return register([])
+      else throw err
+    }
+
+    var pkg = path.join(found, pkgName)
+
+    return register(getTransformsFromPkg(self.readFile(pkg)))
   }
 }
 
