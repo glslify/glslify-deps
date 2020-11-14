@@ -31,7 +31,7 @@ function DepperSync(opts) {
 }
 
 DepperSync.prototype.inline = function(source, basedir) {
-  var inlineFile = path.resolve(basedir || process.cwd(), inlineName)
+  var inlineFile = path.resolve(basedir || this._cwd, inlineName)
 
   inlineSource = source
 

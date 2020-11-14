@@ -33,7 +33,7 @@ function DepperAsync(opts) {
 }
 
 DepperAsync.prototype.inline = function(source, basedir, done) {
-  var inlineFile = path.resolve(basedir || process.cwd(), inlineName)
+  var inlineFile = path.resolve(basedir || this._cwd, inlineName)
 
   inlineSource = source
 
