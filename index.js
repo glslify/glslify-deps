@@ -96,7 +96,7 @@ DepperAsync.prototype.add = function(filename, done) {
     }
   }
 
-  function resolveImports(resolved) {
+  function resolveImports(done) {
     map(imports, 10, function(imp, next) {
       var importName = imp.split(/\s*,\s*/).shift()
 
@@ -118,6 +118,6 @@ DepperAsync.prototype.add = function(filename, done) {
           next()
         })
       })
-    }, resolved)
+    }, done)
   }
 }
