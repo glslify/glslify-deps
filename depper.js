@@ -49,6 +49,20 @@ function Depper(opts, async) {
   }
 }
 
+Depper.prototype.inline = function(source, basedir, done) {
+  var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
+
+  this._inlineSource = source
+
+  if (this._async) {
+    this.add(inlineFile, function(err, tree) {
+      done && done(err, !err && tree)
+    })
+  } else {
+    return this.add(inlineFile)
+  }
+}
+
 function createDefaultRead(async) {
   if (async) {
     return function defaultRead(src, done) {

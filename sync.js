@@ -26,14 +26,6 @@ function DepperSync(opts) {
   Depper.call(this, opts)
 }
 
-DepperSync.prototype.inline = function(source, basedir) {
-  var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
-
-  this._inlineSource = source
-
-  return this.add(inlineFile)
-}
-
 /**
  * Adds a transform to use on your local dependencies.
  * Note that this should be used before calling `add`.
