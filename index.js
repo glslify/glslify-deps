@@ -122,13 +122,6 @@ DepperAsync.prototype.add = function(filename, done) {
   }
 }
 
-DepperAsync.prototype.readFile = function(filename, done) {
-  if (path.basename(filename) !== this._inlineName)
-    return this._readFile(filename, done)
-
-  return done(null, this._inlineSource)
-}
-
 /**
  * Determines which transforms to use for a particular file.
  * The rules here are the same you see in browserify:

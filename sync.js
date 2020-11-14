@@ -98,13 +98,6 @@ DepperSync.prototype.add = function(filename) {
   }
 }
 
-DepperSync.prototype.readFile = function(filename) {
-  if (path.basename(filename) !== this._inlineName)
-    return this._readFile(filename)
-
-  return this._inlineSource
-}
-
 /**
  * Determines which transforms to use for a particular file.
  * The rules here are the same you see in browserify:

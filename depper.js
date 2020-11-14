@@ -164,6 +164,16 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
   }
 }
 
+Depper.prototype.readFile = function(filename, done) {
+  if (path.basename(filename) !== this._inlineName)
+    return this._readFile(filename, done)
+
+  if(this._async) {
+    return done(null, this._inlineSource)
+  }
+  return this._inlineSource
+}
+
 function createDefaultRead(async) {
   if (async) {
     return function defaultRead(src, done) {
