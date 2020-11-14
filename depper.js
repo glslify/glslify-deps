@@ -1,8 +1,14 @@
+var path     = require('path')
 var fs       = require('graceful-fs')
 var Emitter  = require('events/')
 var inherits = require('inherits')
 var cacheWrap = require('./cacheWrap')
 var glslResolve = require('glsl-resolve')
+
+var {
+  genInlineName,
+} = require('./common.js')
+
 
 module.exports = Depper
 
@@ -34,6 +40,9 @@ function Depper(opts, async) {
 
   this._readFile = cacheWrap(opts.readFile || createDefaultRead(this._async), this._fileCache, this._async)
   this.resolve   = opts.resolve || (this._async ? glslResolve : glslResolve.sync)
+
+  this._inlineSource = ''
+  this._inlineName = genInlineName()
 
   if (typeof this._cwd !== 'string') {
     throw new Error('glslify-deps: cwd must be a string path')

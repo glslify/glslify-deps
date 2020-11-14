@@ -11,11 +11,7 @@ var {
   glslifyPreprocessor,
   glslifyExport,
   glslifyImport,
-  genInlineName,
 } = require('./common.js')
-
-var inlineName   = genInlineName()
-var inlineSource = ''
 
 module.exports = DepperAsync
 
@@ -33,9 +29,9 @@ function DepperAsync(opts) {
 }
 
 DepperAsync.prototype.inline = function(source, basedir, done) {
-  var inlineFile = path.resolve(basedir || this._cwd, inlineName)
+  var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
 
-  inlineSource = source
+  this._inlineSource = source
 
   this.add(inlineFile, function(err, tree) {
     done && done(err, !err && tree)
@@ -174,10 +170,10 @@ DepperAsync.prototype.add = function(filename, done) {
 }
 
 DepperAsync.prototype.readFile = function(filename, done) {
-  if (path.basename(filename) !== inlineName)
+  if (path.basename(filename) !== this._inlineName)
     return this._readFile(filename, done)
 
-  return done(null, inlineSource)
+  return done(null, this._inlineSource)
 }
 
 /**
