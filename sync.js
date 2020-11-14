@@ -30,13 +30,11 @@ function DepperSync(opts) {
  * modules.
  *
  * @param {String} filename The absolute path of this file.
- * @param {String} src The shader source for this file.
  *
  * Returns an array of dependencies discovered so far as its second argument.
  */
 DepperSync.prototype.add = function(filename) {
   var basedir = path.dirname(filename = path.resolve(filename))
-  var cache   = this._cache
   var self    = this
   var exports = []
   var imports = []
@@ -57,20 +55,38 @@ DepperSync.prototype.add = function(filename) {
   dep.source = src
   extractPreprocessors(dep.source, imports, exports)
 
-  resolveImports()
+  self._resolveImports(imports, {
+    basedir: basedir,
+    deps: dep.deps
+  })
+
   return self._deps
+}
 
-  function resolveImports() {
-    imports.forEach(function (imp) {
-      var importName = getImportName(imp)
+/**
+ * Internal sync method to retrieve dependencies
+ * resolving imports using the internal cache
+ *
+ * @param {string[]} imports
+ * @param {object} opts extends options for https://www.npmjs.com/package/resolve
+ * @param {object} opts.deps existing dependencies
+ * @return {object} resolved dependencies
+ */
+DepperSync.prototype._resolveImports = function(imports, opts) {
+  var self = this
+  var deps = opts && opts.deps || {}
 
-      var resolved = self.resolve(importName, { basedir: basedir })
-      if (cache[resolved]) {
-        dep.deps[importName] = cache[resolved].id
-      }
-      var i = self._i
-      cache[resolved] = self.add(resolved)[i]
-      dep.deps[importName] = cache[resolved].id
-    })
-  }
+  imports.forEach(function (imp) {
+    var importName = getImportName(imp)
+
+    var resolved = self.resolve(importName, opts)
+    if (self._cache[resolved]) {
+      deps[importName] = self._cache[resolved].id
+    }
+    var i = self._i
+    self._cache[resolved] = self.add(resolved)[i]
+    deps[importName] = self._cache[resolved].id
+  })
+
+  return deps
 }

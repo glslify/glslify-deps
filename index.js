@@ -31,7 +31,6 @@ function DepperAsync(opts) {
  * modules.
  *
  * @param {String} filename The absolute path of this file.
- * @param {String} src The shader source for this file.
  * @param {Function} done(err, deps)
  *
  * The `done` callback will be called when the entire graph has been
@@ -40,7 +39,6 @@ function DepperAsync(opts) {
  */
 DepperAsync.prototype.add = function(filename, done) {
   var basedir = path.dirname(filename = path.resolve(filename))
-  var cache   = this._cache
   var self    = this
   var exports = []
   var imports = []
@@ -66,7 +64,10 @@ DepperAsync.prototype.add = function(filename, done) {
 
         dep.source = src
         extractPreprocessors(dep.source, imports, exports)
-        resolveImports(function(err) {
+        self._resolveImports(imports, {
+          deps: dep.deps,
+          basedir: basedir
+        }, function(err) {
           setTimeout(function() {
             done && done(err, !err && self._deps)
           })
@@ -76,25 +77,39 @@ DepperAsync.prototype.add = function(filename, done) {
   })
 
   return dep
+}
 
-  function resolveImports(done) {
-    map(imports, 10, function(imp, next) {
-      var importName = getImportName(imp)
+/**
+ * Internal async method to retrieve dependencies
+ * resolving imports using the internal cache
+ *
+ * @param {string[]} imports
+ * @param {object} opts extends options for https://www.npmjs.com/package/resolve
+ * @param {object} opts.deps existing dependencies
+ * @param {(err: Error)} done
+ * @return {object} resolved dependencies
+ */
+DepperAsync.prototype._resolveImports = function(imports, opts, done) {
+  var self = this
+  var deps = opts && opts.deps || {}
+  map(imports, 10, function(imp, next) {
+    var importName = getImportName(imp)
 
-      self.resolve(importName, { basedir: basedir }, function(err, resolved) {
+    self.resolve(importName, opts, function(err, resolved) {
+      if (err) return next(err)
+
+      if (self._cache[resolved]) {
+        deps[importName] = self._cache[resolved].id
+        return next()
+      }
+
+      self._cache[resolved] = self.add(resolved, function(err) {
         if (err) return next(err)
-
-        if (cache[resolved]) {
-          dep.deps[importName] = cache[resolved].id
-          return next()
-        }
-
-        cache[resolved] = self.add(resolved, function(err) {
-          if (err) return next(err)
-          dep.deps[importName] = cache[resolved].id
-          next()
-        })
+        deps[importName] = self._cache[resolved].id
+        next()
       })
-    }, done)
-  }
+    })
+  }, done)
+
+  return deps
 }
