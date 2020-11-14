@@ -19,6 +19,8 @@ module.exports = Depper
  * Creates a new instance of glslify-deps. Generally, you'll
  * want to use one instance per bundle.
  *
+ * note: this is an interface to be extended with a top class
+ *
  * @class
  * @param {String} cwd The root directory of your shader. Defaults to process.cwd()
  */
