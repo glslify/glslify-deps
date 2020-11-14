@@ -32,6 +32,16 @@ function getTransformsFromPkg(pkgJson) {
   });
 }
 
+function getImportName(imp) {
+  return imp
+    .split(/\s*,\s*/)
+    .shift()
+    .trim()
+    .replace(/^'|'$/g, '')
+    .replace(/^"|"$/g, '')
+}
+
 module.exports = {
-  getTransformsFromPkg
+  getTransformsFromPkg,
+  getImportName
 }

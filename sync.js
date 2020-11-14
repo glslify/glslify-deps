@@ -10,6 +10,10 @@ var {
   glslifyImport,
 } = require('./common.js')
 
+var {
+  getImportName
+} = require('./utils');
+
 module.exports = DepperSync
 
 /**
@@ -81,11 +85,7 @@ DepperSync.prototype.add = function(filename) {
 
   function resolveImports() {
     imports.forEach(function (imp) {
-      var importName = imp.split(/\s*,\s*/).shift()
-
-      importName = importName.trim()
-      importName = importName.replace(/^'|'$/g, '')
-      importName = importName.replace(/^"|"$/g, '')
+      var importName = getImportName(imp)
 
       var resolved = self.resolve(importName, { basedir: basedir })
       if (cache[resolved]) {
