@@ -67,6 +67,25 @@ Depper.prototype.inline = function(source, basedir, done) {
 }
 
 /**
+ * Internal method to add dependencies
+ * @param {string} filename
+ */
+Depper.prototype._addDep = function(filename) {
+  var dep = {
+    id: this._i++
+  , deps: {}
+  , file: filename
+  , source: null
+  , entry: this._i === 1
+  }
+
+  this._deps.push(dep)
+
+  return dep;
+}
+
+
+/**
  * Adds a transform to use on your local dependencies.
  * Note that this should be used before calling `add`.
  *

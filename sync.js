@@ -38,15 +38,7 @@ DepperSync.prototype.add = function(filename) {
   var exports = []
   var imports = []
 
-  var dep = {
-      id: this._i++
-    , deps: {}
-    , file: filename
-    , source: null
-    , entry: this._i === 1
-  }
-
-  this._deps.push(dep)
+  var dep = this._addDep(filename)
   var src = this.readFile(filename)
   var trs = this.getTransformsForFile(filename)
   this.emit('file', filename)

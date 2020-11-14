@@ -43,15 +43,7 @@ DepperAsync.prototype.add = function(filename, done) {
   var exports = []
   var imports = []
 
-  var dep = {
-      id: this._i++
-    , deps: {}
-    , file: filename
-    , source: null
-    , entry: this._i === 1
-  }
-
-  this._deps.push(dep)
+  var dep = this._addDep(filename)
   this.readFile(filename, function(err, src) {
     if (err) return done(err)
 
