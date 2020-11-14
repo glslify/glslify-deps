@@ -1,4 +1,3 @@
-var tokenize = require('glsl-tokenizer/string')
 var map      = require('map-limit')
 var inherits = require('inherits')
 var path     = require('path')

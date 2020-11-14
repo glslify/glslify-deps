@@ -1,4 +1,3 @@
-var tokenize = require('glsl-tokenizer/string')
 var inherits = require('inherits')
 var path     = require('path')
 var Depper = require('./depper')
