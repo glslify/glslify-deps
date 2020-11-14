@@ -9,9 +9,6 @@ var findup   = require('@choojs/findup')
 
 var {
   genInlineName,
-} = require('./common.js')
-
-var {
   getTransformsFromPkg,
 } = require('./utils.js')
 

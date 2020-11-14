@@ -3,14 +3,10 @@ var map      = require('map-limit')
 var inherits = require('inherits')
 var path     = require('path')
 var Depper = require('./depper')
-var {
-  glslifyPreprocessor,
-  glslifyExport,
-  glslifyImport,
-} = require('./common.js')
 
 var {
-  getImportName
+  getImportName,
+  extractPreprocessors
 } = require('./utils');
 
 module.exports = DepperAsync
@@ -69,7 +65,7 @@ DepperAsync.prototype.add = function(filename, done) {
         if (err) return done(err)
 
         dep.source = src
-        extractPreprocessors()
+        extractPreprocessors(dep.source, imports, exports)
         resolveImports(function(err) {
           setTimeout(function() {
             done && done(err, !err && self._deps)
@@ -80,23 +76,6 @@ DepperAsync.prototype.add = function(filename, done) {
   })
 
   return dep
-
-  function extractPreprocessors() {
-    var tokens = tokenize(dep.source)
-
-    for (var i = 0; i < tokens.length; i++) {
-      var token = tokens[i]
-      if (token.type !== 'preprocessor') continue
-
-      var data = token.data
-      if (!glslifyPreprocessor(data)) continue
-
-      var exp = glslifyExport(data)
-      var imp = glslifyImport(data)
-      if (exp) exports.push(exp[1])
-      if (imp) imports.push(imp[2])
-    }
-  }
 
   function resolveImports(done) {
     map(imports, 10, function(imp, next) {

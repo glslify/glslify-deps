@@ -1,3 +1,22 @@
+var tokenize = require('glsl-tokenizer/string')
+
+function glslifyPreprocessor(data) {
+  return /#pragma glslify:/.test(data)
+}
+
+function glslifyExport(data) {
+  return /#pragma glslify:\s*export\(([^\)]+)\)/.exec(data)
+}
+
+function glslifyImport(data) {
+  return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^\)]+)\)/.exec(data)
+}
+
+function genInlineName() {
+  return '__INLINE__' + Math.random()
+}
+
+
 /**
  * Gets glslify transform from given package.json
  *
@@ -32,6 +51,30 @@ function getTransformsFromPkg(pkgJson) {
   });
 }
 
+/**
+ * Extracts preprocessors copying the imports and exports
+ * into respective parameters
+ * @param {string} source
+ * @param {string[]} imports
+ * @param {string[]} exports
+ */
+function extractPreprocessors(source, imports, exports) {
+  var tokens = tokenize(source)
+
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i]
+    if (token.type !== 'preprocessor') continue
+
+    var data = token.data
+    if (!glslifyPreprocessor(data)) continue
+
+    var exp = glslifyExport(data)
+    var imp = glslifyImport(data)
+    if (exp) exports.push(exp[1])
+    if (imp) imports.push(imp[2])
+  }
+}
+
 function getImportName(imp) {
   return imp
     .split(/\s*,\s*/)
@@ -43,5 +86,7 @@ function getImportName(imp) {
 
 module.exports = {
   getTransformsFromPkg,
-  getImportName
+  getImportName,
+  extractPreprocessors,
+  genInlineName
 }

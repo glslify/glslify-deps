@@ -2,14 +2,10 @@ var tokenize = require('glsl-tokenizer/string')
 var inherits = require('inherits')
 var path     = require('path')
 var Depper = require('./depper')
-var {
-  glslifyPreprocessor,
-  glslifyExport,
-  glslifyImport,
-} = require('./common.js')
 
 var {
-  getImportName
+  getImportName,
+  extractPreprocessors
 } = require('./utils');
 
 module.exports = DepperSync
@@ -59,27 +55,10 @@ DepperSync.prototype.add = function(filename) {
   self.emit('file', filename)
   src = self.applyTransforms(filename, src, trs)
   dep.source = src
-  extractPreprocessors()
+  extractPreprocessors(dep.source, imports, exports)
 
   resolveImports()
   return self._deps
-
-  function extractPreprocessors() {
-    var tokens = tokenize(dep.source)
-
-    for (var i = 0; i < tokens.length; i++) {
-      var token = tokens[i]
-      if (token.type !== 'preprocessor') continue
-
-      var data = token.data
-      if (!glslifyPreprocessor(data)) continue
-
-      var exp = glslifyExport(data)
-      var imp = glslifyImport(data)
-      if (exp) exports.push(exp[1])
-      if (imp) imports.push(imp[2])
-    }
-  }
 
   function resolveImports() {
     imports.forEach(function (imp) {
