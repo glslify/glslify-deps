@@ -35,7 +35,6 @@ function DepperSync(opts) {
  */
 DepperSync.prototype.add = function(filename) {
   var basedir = path.dirname(filename = path.resolve(filename))
-  var self    = this
   var exports = []
   var imports = []
 
@@ -49,18 +48,18 @@ DepperSync.prototype.add = function(filename) {
 
   this._deps.push(dep)
   var src = this.readFile(filename)
-  var trs = self.getTransformsForFile(filename)
-  self.emit('file', filename)
-  src = self.applyTransforms(filename, src, trs)
+  var trs = this.getTransformsForFile(filename)
+  this.emit('file', filename)
+  src = this.applyTransforms(filename, src, trs)
   dep.source = src
   extractPreprocessors(dep.source, imports, exports)
 
-  self._resolveImports(imports, {
+  this._resolveImports(imports, {
     basedir: basedir,
     deps: dep.deps
   })
 
-  return self._deps
+  return this._deps
 }
 
 /**
