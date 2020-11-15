@@ -1,6 +1,7 @@
 var inherits = require('inherits')
 var path     = require('path')
 var Depper = require('./depper')
+var transformResolve = require('./transform-resolve')
 
 var {
   getImportName,
@@ -19,6 +20,8 @@ module.exports = DepperSync
 inherits(DepperSync, Depper)
 function DepperSync(opts) {
   if (!(this instanceof DepperSync)) return new DepperSync(opts)
+  opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
+  opts.transformResolve = opts.transformResolve || transformResolve.sync
   Depper.call(this, opts)
 }
 

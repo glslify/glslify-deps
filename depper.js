@@ -1,9 +1,9 @@
 var path     = require('path')
 var fs       = require('graceful-fs')
+var map      = require('map-limit')
 var Emitter  = require('events/')
 var inherits = require('inherits')
 var cacheWrap = require('./cacheWrap')
-var nodeResolve = require('resolve')
 var glslResolve = require('glsl-resolve')
 var findup   = require('@choojs/findup')
 
@@ -29,10 +29,9 @@ function Depper(opts, async) {
   if (!(this instanceof Depper)) return new Depper(opts)
   Emitter.call(this)
 
-  opts = typeof opts === 'string' ? { cwd: opts } : opts
   opts = opts || {}
 
-  this._async      = opts.async || async
+  this._async      = opts.async || false
   this._deps       = []
   this._cwd        = opts.cwd || process.cwd()
   this._cache      = {}
@@ -45,6 +44,17 @@ function Depper(opts, async) {
 
   this._readFile = cacheWrap(opts.readFile || createDefaultRead(this._async), this._fileCache, this._async)
   this.resolve   = opts.resolve || (this._async ? glslResolve : glslResolve.sync)
+  this.transformResolve = opts.transformResolve
+  if (!this.transformResolve) {
+    throw new Error('glslify-deps: transformResolve must be defined')
+  }
+
+  this._transformResolveAsync = !!this.transformResolve.sync
+
+  if (!this._async && this._transformResolveAsync) {
+    throw new Error('glslify-deps: transformResolve async detected \
+    \nwhen sync context, please ensure your resolver is even with the context')
+  }
 
   this._inlineSource = ''
   this._inlineName = genInlineName()
@@ -104,7 +114,9 @@ Depper.prototype._addDep = function(filename) {
  * is a callback which takes the transformed shader source.
  *
  * @param {String|Function} transform
- * @param {Object} opts
+ * @param {Object} [opts]
+ * @param {Boolean} [opts.global] adds transform to global scope
+ * @param {Boolean} [opts.post]
  */
 Depper.prototype.transform = function(transform, opts) {
   var name = typeof transform === 'string' ? transform : null
@@ -116,7 +128,7 @@ Depper.prototype.transform = function(transform, opts) {
   // by glslify after the file has been bundled.
   if (opts && opts.post) return this
 
-  transform = this.resolveTransform(transform)
+
   list.push({ tr: transform, opts: opts, name: name })
 
   return this
@@ -124,30 +136,47 @@ Depper.prototype.transform = function(transform, opts) {
 
 /**
  * Resolves a transform.
- *
+ * Works for both contexts async and sync
  * Functions are retained as-is.
- * Strings are resolved using node's `require` resolution algorithm,
- * and then required directly.
+ * Strings are resolved using the transformResolve option
+ *
  *
  * @param {String|Function} transform
+ * @param {(err: Error, transform: Function)} [done] Applies if is defined
+ * @return {Function}
  */
-Depper.prototype.resolveTransform = function(transform) {
-  if (typeof transform === 'string') {
-    transform = nodeResolve.sync(transform, {
-      basedir: this._cwd
-    })
-    if (this._async) {
-      transform = require(transform)
-    } else {
-      var m = require(transform)
-      if (!m || typeof m.sync !== 'function') {
-        throw new Error('transform ' + transform + ' does not provide a'
-          + ' synchronous interface')
-      }
-      transform = m.sync
-    }
+Depper.prototype.resolveTransform = function(transform, done) {
+  var opts = { cwd: this._cwd }
+
+  if (typeof transform === 'function') {
+    if (done) done(null, transform)
+    return transform
   }
-  return transform
+
+  function selectTransform(tr) {
+    if (!tr || typeof tr.sync !== 'function') {
+      var err = new Error('transform ' + transform + ' does not provide a'
+      + ' synchronous interface')
+      if (done) {
+        done(err)
+        return null
+      } else {
+        throw err
+      }
+    }
+    return tr.sync
+  }
+
+  if (this._transformResolveAsync) {
+    this.transformResolve(transform, opts, function(err, resolved) {
+      if (err) return done(err)
+      return done(null, selectTransform(resolved))
+    });
+  } else {
+    var tr = selectTransform(this.transformResolve(transform, opts))
+    if (tr && done) done(null, tr)
+    return tr
+  }
 }
 
 /**
@@ -224,25 +253,32 @@ Depper.prototype.getTransformsForFile = function(filename, done) {
     }
   }
 
-  function register(transforms) {
-    trCache[fileDir] = trLocal
-      .concat(transforms.map(function(tr) {
-        tr.tr = self.resolveTransform(tr.tr)
-        return tr
-      }))
-      .concat(self._globalTransforms);
-    var result = trCache[fileDir]
-    if (self._async) {
-      done(null, result)
-    } else {
-      return result
-    }
+  function register(transforms, cb) {
+    var result = trLocal
+      .concat(transforms)
+      .concat(self._globalTransforms)
+      // map acts as synchronous if the iterator is always in
+      // the main thread so is compatible with resolveTransform
+      map(result, 1, function(tr, next) {
+        self.resolveTransform(tr.tr, next)
+      }, (err, resolved) => {
+        if (err) {
+          if(cb) return cb(err)
+          throw err
+        }
+        result.forEach((tr, idx) => {
+          tr.tr = resolved[idx]
+        })
+        if(cb) cb(null, result)
+      })
+
+    return trCache[fileDir] = result
   }
 
   if (this._async) {
     findup(fileDir, pkgName, function(err, found) {
       var notFound = err && err.message === 'not found'
-      if (notFound) return register([])
+      if (notFound) return register([], done)
       if (err) return done(err)
 
       var pkg = path.join(found, pkgName)
@@ -254,7 +290,7 @@ Depper.prototype.getTransformsForFile = function(filename, done) {
           transforms = getTransformsFromPkg(pkgJson)
         } catch(e) { return done(e) }
 
-        register(transforms)
+        register(transforms, done)
       })
     })
   } else {

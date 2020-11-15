@@ -2,6 +2,7 @@ var map      = require('map-limit')
 var inherits = require('inherits')
 var path     = require('path')
 var Depper = require('./depper')
+var transformResolve = require('./transform-resolve')
 
 var {
   getImportName,
@@ -20,7 +21,11 @@ module.exports = DepperAsync
 inherits(DepperAsync, Depper)
 function DepperAsync(opts) {
   if (!(this instanceof DepperAsync)) return new DepperAsync(opts)
-  Depper.call(this, opts, true);
+  opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
+  opts.async = true
+  // keeps the initial behaviour of transform resolution
+  opts.transformResolve = opts.transformResolve || transformResolve.sync
+  Depper.call(this, opts);
 }
 
 /**
@@ -45,7 +50,6 @@ DepperAsync.prototype.add = function(filename, done) {
   var dep = this._addDep(filename)
   this.readFile(filename, function(err, src) {
     if (err) return done(err)
-
     self.getTransformsForFile(filename, function(err, trs) {
       if (err) return done(err)
 
