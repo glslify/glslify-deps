@@ -1,3 +1,5 @@
+// @ts-check
+/** @typedef {import('glsl-resolve')} GlslResolve */
 var path     = require('path')
 var fs       = require('graceful-fs')
 var map      = require('map-limit')
@@ -13,7 +15,59 @@ var {
 } = require('./utils.js')
 
 
-module.exports = Depper
+/**
+ * @callback GlslTransformSync
+ * @param {String} filename The absolute path of the file you're transforming.
+ * @param {String} src The shader source you'd like to transform.
+ * @param {Object} opts The transform options.
+ * @returns {String} transformed shader
+ */
+
+/**
+ * @callback GlslTransformAsync
+ * @param {String} filename The absolute path of the file you're transforming.
+ * @param {String} src The shader source you'd like to transform.
+ * @param {Object} opts The transform options.
+ * @param {(err: Error, result: String) => any} [cb] callback with the transformed shader
+ */
+
+/**
+ * @typedef {GlslTransformSync|GlslTransformAsync} GlslTransform
+ */
+
+/**
+ * @callback TransformResolveSync
+ * @param {String|GlslTransform} transform
+ * @param {Object} opts
+ * @returns {GlslTransform}
+ */
+
+/**
+ * @callback TransformResolveAsync
+ * @param {String|GlslTransform} transform
+ * @param {Object} opts
+ * @param {(err: Error, transform: GlslTransform) => any} [cb]
+ */
+
+/**
+ * @typedef {TransformResolveSync|TransformResolveAsync} TransformResolve
+ */
+
+/**
+ * @typedef {Object} TransformDefinition
+ * @prop {string|GlslTransform} tr
+ * @prop {string} name
+ * @prop {any} opts
+ */
+
+/**
+ * @typedef {Object} TransformResolved
+ * @prop {GlslTransform} tr
+ * @prop {string} name
+ * @prop {any} opts
+ */
+
+
 
 /**
  * Creates a new instance of glslify-deps. Generally, you'll
@@ -22,11 +76,17 @@ module.exports = Depper
  * note: this is an interface to be extended with a top class
  *
  * @class
- * @param {String} cwd The root directory of your shader. Defaults to process.cwd()
+ * @param {Object} [opts] options
+ * @param {Boolean} [opts.async] Defines the mechanism flow resolution.
+ * @param {String} [opts.cwd] The root directory of your shader. Defaults to process.cwd().
+ * @param {Function} [opts.readFile] pass in a custom function reading files.
+ * @param {GlslResolve} [opts.resolve] pass in a custom function for resolving require calls. It has the same signature as glsl-resolve.
+ * @param {Object<string, string>} [opts.files] a filename/source object mapping of files to prepopulate the file cache with. Useful for overriding.
+ * @param {TransformResolveAsync|TransformResolveSync} [opts.transformResolve] pass in a custom function for resolving non function transforms.
  */
-inherits(Depper, Emitter)
-function Depper(opts, async) {
+function Depper(opts) {
   if (!(this instanceof Depper)) return new Depper(opts)
+  // @ts-ignore
   Emitter.call(this)
 
   opts = opts || {}
@@ -36,25 +96,29 @@ function Depper(opts, async) {
   this._cwd        = opts.cwd || process.cwd()
   this._cache      = {}
   this._i          = 0
-  this._transforms = []
   this._trCache    = {}
   this._fileCache  = opts.files || {}
-
+  /** @type {TransformDefinition[]} */
+  this._transforms = []
+  /** @type {TransformDefinition[]} */
   this._globalTransforms = []
 
   this._readFile = cacheWrap(opts.readFile || createDefaultRead(this._async), this._fileCache, this._async)
   this.resolve   = opts.resolve || (this._async ? glslResolve : glslResolve.sync)
-  this.transformResolve = opts.transformResolve
-  if (!this.transformResolve) {
+
+  if (!opts.transformResolve) {
     throw new Error('glslify-deps: transformResolve must be defined')
   }
 
-  this._transformResolveAsync = !!this.transformResolve.sync
+  // @ts-ignore
+  this._transformResolveAsync = !!opts.transformResolve.sync
 
   if (!this._async && this._transformResolveAsync) {
     throw new Error('glslify-deps: transformResolve async detected \
     \nwhen sync context, please ensure your resolver is even with the context')
   }
+
+  this.transformResolve = opts.transformResolve
 
   this._inlineSource = ''
   this._inlineName = genInlineName()
@@ -96,6 +160,12 @@ Depper.prototype._addDep = function(filename) {
   return dep;
 }
 
+/**
+ * Add method dummy interface
+ */
+Depper.prototype.add = function(filename, cb) {
+
+}
 
 /**
  * Adds a transform to use on your local dependencies.
@@ -113,7 +183,7 @@ Depper.prototype._addDep = function(filename) {
  * as a string, `opts` is an options object for configuration, and `done`
  * is a callback which takes the transformed shader source.
  *
- * @param {String|Function} transform
+ * @param {String|GlslTransform} transform
  * @param {Object} [opts]
  * @param {Boolean} [opts.global] adds transform to global scope
  * @param {Boolean} [opts.post]
@@ -141,8 +211,8 @@ Depper.prototype.transform = function(transform, opts) {
  * Strings are resolved using the transformResolve option
  *
  *
- * @param {String|Function} transform
- * @param {(err: Error, transform: Function)} [done] Applies if is defined
+ * @param {String|GlslTransform} transform
+ * @param {(err: Error, transform?: GlslTransform) => any} [done] Applies if is defined
  * @return {Function}
  */
 Depper.prototype.resolveTransform = function(transform, done) {
@@ -188,8 +258,8 @@ Depper.prototype.resolveTransform = function(transform, done) {
  *
  * @param {String} filename The absolute path of the file you're transforming.
  * @param {String} src The shader source you'd like to transform.
- * @param {Array} transforms The transforms you'd like to apply.
- * @param {(err: Error, result: string) => any} [done] Applies when async true
+ * @param {TransformResolved[]} transforms The transforms you'd like to apply.
+ * @param {(err: Error, result?: string) => any} [done] Applies when async true
  */
 Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
   if (this._async) {
@@ -227,7 +297,7 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
  *   `depper.transform`.
  *
  * @param {String} filename The absolute path of the file in question.
- * @param {(err: Error, transforms: any) => any} [done] Applies when async true
+ * @param {(err: Error, transforms?: GlslTransform[]) => any} [done] Applies when async true
  */
 Depper.prototype.getTransformsForFile = function(filename, done) {
   var self  = this
@@ -327,3 +397,6 @@ function createDefaultRead(async) {
     return fs.readFileSync(src, 'utf8')
   }
 }
+
+inherits(Depper, Emitter)
+module.exports = Depper

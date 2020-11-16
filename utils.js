@@ -1,3 +1,5 @@
+// @ts-check
+
 var tokenize = require('glsl-tokenizer/string')
 
 function glslifyPreprocessor(data) {
@@ -20,7 +22,7 @@ function genInlineName() {
 /**
  * Gets glslify transform from given package.json
  *
- * @param {object|string} pkgJson package.json filename path or json
+ * @param {object|string} pkgJson package.json string data or json
  * @returns {({tr: string, name: string, opts: object})[]}
  */
 function getTransformsFromPkg(pkgJson) {

@@ -32,8 +32,8 @@ Creates a fresh `glslify-deps` instance. Accepts the following options:
 * `cwd`: the current working directory to resolve relative file paths from.
 * `readFile`: pass in a custom function reading files.
 * `resolve`: pass in a custom function for resolving require calls. It has
-* `transformResolve`: pass in a custom function for resolving non function transforms.
   the same signature as [glsl-resolve](http://github.com/hughsk/glsl-resolve).
+* `transformResolve`: pass in a custom function for resolving non function transforms.
 * `files`: a filename/source object mapping of files to prepopulate
   the file cache with. Useful for overriding particular file paths manually,
   most notably the "entry" file.

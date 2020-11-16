@@ -8,16 +8,16 @@ var {
   extractPreprocessors
 } = require('./utils');
 
-module.exports = DepperSync
-
 /**
  * Creates a new instance of glslify-deps. Generally, you'll
  * want to use one instance per bundle.
  *
  * @class
- * @param {String} cwd The root directory of your shader. Defaults to process.cwd()
+ * @param {String|({
+  *   cwd: String,
+  *   transformResolve: Function
+  * })} opts The root directory of your shader. Defaults to process.cwd()
  */
-inherits(DepperSync, Depper)
 function DepperSync(opts) {
   if (!(this instanceof DepperSync)) return new DepperSync(opts)
   opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
@@ -83,3 +83,6 @@ DepperSync.prototype._resolveImports = function(imports, opts) {
 
   return deps
 }
+
+inherits(DepperSync, Depper)
+module.exports = DepperSync
