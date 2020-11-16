@@ -1,7 +1,6 @@
 // @ts-check
 /** @typedef {import('glsl-resolve')} GlslResolve */
 var path     = require('path')
-var fs       = require('graceful-fs')
 var map      = require('map-limit')
 var Emitter  = require('events/')
 var inherits = require('inherits')
@@ -10,7 +9,6 @@ var findup   = require('@choojs/findup')
 var {
   genInlineName,
   getTransformsFromPkg,
-  mix,
   cacheWrap,
   parseFiles,
 } = require('./utils.js')
@@ -108,7 +106,11 @@ function Depper(opts) {
   /** @type {TransformDefinition[]} */
   this._globalTransforms = []
 
-  this._readFile = cacheWrap(opts.readFile || createDefaultRead(), this._fileCache)
+  if (!opts.readFile) {
+    throw new Error('glslify-deps: readFile must be defined')
+  }
+
+  this._readFile = cacheWrap(opts.readFile, this._fileCache)
 
   if (!opts.resolve) {
     throw new Error('glslify-deps: resolve must be defined')
@@ -389,18 +391,6 @@ Depper.prototype.readFile = function(filename, done) {
     return done(null, this._inlineSource)
   }
   return this._inlineSource
-}
-
-function createDefaultRead() {
-  function defaultReadAsync(src, done) {
-    fs.readFile(src, 'utf8', done)
-  }
-
-  function defaultRead(src) {
-    return fs.readFileSync(src, 'utf8')
-  }
-
-  return mix(defaultRead, defaultReadAsync)
 }
 
 inherits(Depper, Emitter)

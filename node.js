@@ -3,6 +3,7 @@ var Depper   = require('./depper')
 var path     = require('path')
 var map      = require('map-limit')
 var inherits = require('inherits')
+var fs       = require('graceful-fs')
 var glslResolve = require('glsl-resolve')
 
 var {
@@ -10,6 +11,18 @@ var {
   extractPreprocessors,
   mix
 } = require('./utils');
+
+function createDefaultRead() {
+  function defaultReadAsync(src, done) {
+    fs.readFile(src, 'utf8', done)
+  }
+
+  function defaultRead(src) {
+    return fs.readFileSync(src, 'utf8')
+  }
+
+  return mix(defaultRead, defaultReadAsync)
+}
 
 /**
  *
@@ -20,6 +33,7 @@ function NodeDepper(opts) {
   if (!(this instanceof NodeDepper)) return new NodeDepper(opts)
   opts = opts || {}
   opts.resolve = mix(glslResolve.sync, glslResolve)
+  opts.readFile = createDefaultRead()
   Depper.call(this, opts)
 }
 
