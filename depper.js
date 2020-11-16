@@ -144,9 +144,10 @@ Depper.prototype.inline = function(source, basedir, done) {
  * Internal method to add dependencies
  * @param {object} extra
  */
-Depper.prototype._addDep = function(extra) {
+Depper.prototype._addDep = function(file, extra) {
   var dep = Object.assign({
     id: this._i++
+  , file: file
   , deps: {}
   , source: null
   , entry: this._i === 1
