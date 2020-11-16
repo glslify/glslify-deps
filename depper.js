@@ -67,7 +67,15 @@ var {
  * @prop {any} opts
  */
 
-
+/**
+ * @typedef {Object} DepperOptions
+ * @prop {Boolean} [async] Defines the mechanism flow resolution.
+ * @prop {String} [cwd] The root directory of your shader. Defaults to process.cwd().
+ * @prop {Function} [readFile] pass in a custom function reading files.
+ * @prop {GlslResolve} [resolve] pass in a custom function for resolving require calls. It has the same signature as glsl-resolve.
+ * @prop {Object<string, string>} [files] a filename/source object mapping of files to prepopulate the file cache with. Useful for overriding.
+ * @prop {TransformResolveAsync|TransformResolveSync} [transformResolve] pass in a custom function for resolving non function transforms.
+ */
 
 /**
  * Creates a new instance of glslify-deps. Generally, you'll
@@ -76,13 +84,7 @@ var {
  * note: this is an interface to be extended with a top class
  *
  * @class
- * @param {Object} [opts] options
- * @param {Boolean} [opts.async] Defines the mechanism flow resolution.
- * @param {String} [opts.cwd] The root directory of your shader. Defaults to process.cwd().
- * @param {Function} [opts.readFile] pass in a custom function reading files.
- * @param {GlslResolve} [opts.resolve] pass in a custom function for resolving require calls. It has the same signature as glsl-resolve.
- * @param {Object<string, string>} [opts.files] a filename/source object mapping of files to prepopulate the file cache with. Useful for overriding.
- * @param {TransformResolveAsync|TransformResolveSync} [opts.transformResolve] pass in a custom function for resolving non function transforms.
+ * @param {DepperOptions} [opts] options
  */
 function Depper(opts) {
   if (!(this instanceof Depper)) return new Depper(opts)
