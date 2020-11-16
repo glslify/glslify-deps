@@ -5,7 +5,6 @@ var fs       = require('graceful-fs')
 var map      = require('map-limit')
 var Emitter  = require('events/')
 var inherits = require('inherits')
-var glslResolve = require('glsl-resolve')
 var findup   = require('@choojs/findup')
 
 var {
@@ -110,7 +109,12 @@ function Depper(opts) {
   this._globalTransforms = []
 
   this._readFile = cacheWrap(opts.readFile || createDefaultRead(), this._fileCache)
-  this.resolve   = opts.resolve || mix(glslResolve.sync, glslResolve)
+
+  if (!opts.resolve) {
+    throw new Error('glslify-deps: resolve must be defined')
+  }
+
+  this.resolve = opts.resolve;
 
   if (!opts.transformRequire) {
     throw new Error('glslify-deps: transformRequire must be defined')

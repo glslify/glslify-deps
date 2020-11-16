@@ -3,10 +3,12 @@ var Depper   = require('./depper')
 var path     = require('path')
 var map      = require('map-limit')
 var inherits = require('inherits')
+var glslResolve = require('glsl-resolve')
 
 var {
   getImportName,
-  extractPreprocessors
+  extractPreprocessors,
+  mix
 } = require('./utils');
 
 /**
@@ -16,6 +18,8 @@ var {
  */
 function NodeDepper(opts) {
   if (!(this instanceof NodeDepper)) return new NodeDepper(opts)
+  opts = opts || {}
+  opts.resolve = mix(glslResolve.sync, glslResolve)
   Depper.call(this, opts)
 }
 
