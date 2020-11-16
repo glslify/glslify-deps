@@ -106,11 +106,11 @@ function apply(fn, args) {
  * Takes an sync and async functions and return a function which detects if the last argument
  * is a callback in order to select which flow to use
  * @param {function} sync
- * @param {function} [async]
+ * @param {function} async
  * @returns {(...args, done) => any}
  */
 function mix(sync, async) {
-  return function() {
+  function mixed() {
     if(typeof arguments[arguments.length - 1] === 'function') {
       if (!async) {
         throw Error('There\'s no async function available')
@@ -119,6 +119,11 @@ function mix(sync, async) {
     }
     return apply(sync, arguments)
   }
+
+  mixed.sync = sync;
+  mixed.async = async;
+
+  return mixed
 }
 
 function cacheWrap(read, cache) {
