@@ -1,6 +1,5 @@
 var inherits = require('inherits')
 var NodeDepper = require('./node')
-var transformRequire = require('./transform-require')
 
 /**
  * Creates a new instance of glslify-deps. Generally, you'll
@@ -16,8 +15,6 @@ function DepperAsync(opts) {
   if (!(this instanceof DepperAsync)) return new DepperAsync(opts)
   opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
   opts.async = true
-  // keeps the initial behaviour of transform resolution
-  opts.transformRequire = opts.transformRequire || transformRequire.sync
   NodeDepper.call(this, opts);
 }
 

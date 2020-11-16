@@ -5,6 +5,7 @@ var map      = require('map-limit')
 var inherits = require('inherits')
 var fs       = require('graceful-fs')
 var glslResolve = require('glsl-resolve')
+var transformRequire = require('./transform-require')
 
 var {
   getImportName,
@@ -31,9 +32,11 @@ function createDefaultRead() {
  */
 function NodeDepper(opts) {
   if (!(this instanceof NodeDepper)) return new NodeDepper(opts)
-  opts = opts || {}
-  opts.resolve = mix(glslResolve.sync, glslResolve)
-  opts.readFile = createDefaultRead()
+  opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
+  opts.resolve = opts.resolve || mix(glslResolve.sync, glslResolve)
+  // keeps the original behaviour of transform resolution
+  opts.transformRequire = opts.transformRequire || transformRequire.sync
+  opts.readFile = opts.readFile || createDefaultRead()
   Depper.call(this, opts)
 }
 
