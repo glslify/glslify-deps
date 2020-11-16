@@ -92,6 +92,8 @@ function Depper(opts) {
 
   opts = opts || {}
 
+  this._inlineSource = ''
+  this._inlineName = genInlineName()
   this._async      = opts.async || false
   this._i          = 0
   this._deps       = []
@@ -105,6 +107,10 @@ function Depper(opts) {
   this._transforms = []
   /** @type {TransformDefinition[]} */
   this._globalTransforms = []
+
+  if (typeof this._cwd !== 'string') {
+    throw new Error('glslify-deps: cwd must be a string path')
+  }
 
   if (!opts.readFile) {
     throw new Error('glslify-deps: readFile must be defined')
@@ -122,21 +128,14 @@ function Depper(opts) {
     throw new Error('glslify-deps: transformRequire must be defined')
   }
 
+  this.transformRequire = opts.transformRequire
+
   // @ts-ignore
   this._transformRequireAsync = !!opts.transformRequire.sync
 
   if (!this._async && this._transformRequireAsync) {
     throw new Error('glslify-deps: transformRequire async detected \
     \nwhen sync context, please ensure your resolver is even with the context')
-  }
-
-  this.transformRequire = opts.transformRequire
-
-  this._inlineSource = ''
-  this._inlineName = genInlineName()
-
-  if (typeof this._cwd !== 'string') {
-    throw new Error('glslify-deps: cwd must be a string path')
   }
 }
 
