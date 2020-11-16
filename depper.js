@@ -5,13 +5,15 @@ var fs       = require('graceful-fs')
 var map      = require('map-limit')
 var Emitter  = require('events/')
 var inherits = require('inherits')
-var cacheWrap = require('./cacheWrap')
 var glslResolve = require('glsl-resolve')
 var findup   = require('@choojs/findup')
 
 var {
   genInlineName,
   getTransformsFromPkg,
+  mix,
+  cacheWrap,
+  parseFiles,
 } = require('./utils.js')
 
 
@@ -99,7 +101,7 @@ function Depper(opts) {
 
   this._cache      = {}
   this._trCache    = {}
-  this._fileCache  = opts.files || {}
+  this._fileCache  = parseFiles(Object.assign({}, opts.files) || {})
   this._cwd        = opts.cwd || process.cwd()
 
   /** @type {TransformDefinition[]} */
@@ -107,8 +109,8 @@ function Depper(opts) {
   /** @type {TransformDefinition[]} */
   this._globalTransforms = []
 
-  this._readFile = cacheWrap(opts.readFile || createDefaultRead(this._async), this._fileCache, this._async)
-  this.resolve   = opts.resolve || (this._async ? glslResolve : glslResolve.sync)
+  this._readFile = cacheWrap(opts.readFile || createDefaultRead(), this._fileCache)
+  this.resolve   = opts.resolve || mix(glslResolve.sync, glslResolve)
 
   if (!opts.transformRequire) {
     throw new Error('glslify-deps: transformRequire must be defined')
@@ -134,16 +136,8 @@ function Depper(opts) {
 
 Depper.prototype.inline = function(source, basedir, done) {
   var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
-
   this._inlineSource = source
-
-  if (this._async) {
-    this.add(inlineFile, function(err, tree) {
-      done && done(err, !err && tree)
-    })
-  } else {
-    return this.add(inlineFile)
-  }
+  return this.add(inlineFile, done)
 }
 
 /**
@@ -390,15 +384,16 @@ Depper.prototype.readFile = function(filename, done) {
   return this._inlineSource
 }
 
-function createDefaultRead(async) {
-  if (async) {
-    return function defaultRead(src, done) {
-      fs.readFile(src, 'utf8', done)
-    }
+function createDefaultRead() {
+  function defaultReadAsync(src, done) {
+    fs.readFile(src, 'utf8', done)
   }
-  return function defaultRead(src) {
+
+  function defaultRead(src) {
     return fs.readFileSync(src, 'utf8')
   }
+
+  return mix(defaultRead, defaultReadAsync)
 }
 
 inherits(Depper, Emitter)
