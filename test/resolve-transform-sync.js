@@ -1,6 +1,6 @@
 var test = require('tape')
 var deps = require('../sync')
-var transformResolve = require('../transform-resolve')
+var transformRequire = require('../transform-require')
 
 test('sync resolveTransform', function(t) {
   var dep = deps(__dirname)
@@ -14,7 +14,7 @@ test('sync resolveTransform throws error when resolveTransform is async', functi
   t.throws(function() {
     deps({
       cwd: __dirname,
-      transformResolve: transformResolve
+      transformRequire: transformRequire
     })
   }, Error, 'should throw error')
   t.end()

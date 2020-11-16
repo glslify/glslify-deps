@@ -14,7 +14,7 @@ var nodeResolve = require('resolve')
  * @param {string} opts.cwd current work directory
  * @param {(err: Error, transform?: GlslTransform) => any} cb
  */
-var transformResolve = function (transform, opts, cb) {
+var transformRequire = function (transform, opts, cb) {
   var cwd = opts && opts.cwd
   if (typeof transform === 'string') {
     return nodeResolve(transform, {
@@ -41,11 +41,11 @@ var transformResolve = function (transform, opts, cb) {
  * @param {string} opts.cwd current work directory
  * @returns {GlslTransform}
  */
-transformResolve.sync = function (transform, opts) {
+transformRequire.sync = function (transform, opts) {
   var cwd = opts && opts.cwd
   return typeof transform === 'string' ? require(nodeResolve.sync(transform, {
     basedir: cwd
   })) : transform
 }
 
-module.exports = transformResolve;
+module.exports = transformRequire;

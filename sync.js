@@ -1,6 +1,6 @@
 var inherits = require('inherits')
 var NodeDepper = require('./node')
-var transformResolve = require('./transform-resolve')
+var transformRequire = require('./transform-require')
 
 /**
  * Creates a new instance of glslify-deps. Generally, you'll
@@ -9,13 +9,13 @@ var transformResolve = require('./transform-resolve')
  * @class
  * @param {String|({
   *   cwd: String,
-  *   transformResolve: Function
+  *   transformRequire: Function
   * })} opts The root directory of your shader. Defaults to process.cwd()
  */
 function DepperSync(opts) {
   if (!(this instanceof DepperSync)) return new DepperSync(opts)
   opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
-  opts.transformResolve = opts.transformResolve || transformResolve.sync
+  opts.transformRequire = opts.transformRequire || transformRequire.sync
   NodeDepper.call(this, opts)
 }
 

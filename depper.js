@@ -36,21 +36,21 @@ var {
  */
 
 /**
- * @callback TransformResolveSync
+ * @callback TransformRequireSync
  * @param {String|GlslTransform} transform
  * @param {Object} opts
  * @returns {GlslTransform}
  */
 
 /**
- * @callback TransformResolveAsync
+ * @callback TransformRequireAsync
  * @param {String|GlslTransform} transform
  * @param {Object} opts
  * @param {(err: Error, transform: GlslTransform) => any} [cb]
  */
 
 /**
- * @typedef {TransformResolveSync|TransformResolveAsync} TransformResolve
+ * @typedef {TransformRequireSync|TransformRequireAsync} TransformRequire
  */
 
 /**
@@ -74,7 +74,7 @@ var {
  * @prop {Function} [readFile] pass in a custom function reading files.
  * @prop {GlslResolve} [resolve] pass in a custom function for resolving require calls. It has the same signature as glsl-resolve.
  * @prop {Object<string, string>} [files] a filename/source object mapping of files to prepopulate the file cache with. Useful for overriding.
- * @prop {TransformResolveAsync|TransformResolveSync} [transformResolve] pass in a custom function for resolving non function transforms.
+ * @prop {TransformRequireAsync|TransformRequireSync} [transformRequire] pass in a custom function for resolving non function transforms.
  */
 
 /**
@@ -110,19 +110,19 @@ function Depper(opts) {
   this._readFile = cacheWrap(opts.readFile || createDefaultRead(this._async), this._fileCache, this._async)
   this.resolve   = opts.resolve || (this._async ? glslResolve : glslResolve.sync)
 
-  if (!opts.transformResolve) {
-    throw new Error('glslify-deps: transformResolve must be defined')
+  if (!opts.transformRequire) {
+    throw new Error('glslify-deps: transformRequire must be defined')
   }
 
   // @ts-ignore
-  this._transformResolveAsync = !!opts.transformResolve.sync
+  this._transformRequireAsync = !!opts.transformRequire.sync
 
-  if (!this._async && this._transformResolveAsync) {
-    throw new Error('glslify-deps: transformResolve async detected \
+  if (!this._async && this._transformRequireAsync) {
+    throw new Error('glslify-deps: transformRequire async detected \
     \nwhen sync context, please ensure your resolver is even with the context')
   }
 
-  this.transformResolve = opts.transformResolve
+  this.transformRequire = opts.transformRequire
 
   this._inlineSource = ''
   this._inlineName = genInlineName()
@@ -211,7 +211,7 @@ Depper.prototype.transform = function(transform, opts) {
  * Resolves a transform.
  * Works for both contexts async and sync
  * Functions are retained as-is.
- * Strings are resolved using the transformResolve option
+ * Strings are resolved using the transformRequire option
  *
  *
  * @param {String|GlslTransform} transform
@@ -240,13 +240,13 @@ Depper.prototype.resolveTransform = function(transform, done) {
     return tr.sync
   }
 
-  if (this._transformResolveAsync) {
-    this.transformResolve(transform, opts, function(err, resolved) {
+  if (this._transformRequireAsync) {
+    this.transformRequire(transform, opts, function(err, resolved) {
       if (err) return done(err)
       return done(null, selectTransform(resolved))
     });
   } else {
-    var tr = selectTransform(this.transformResolve(transform, opts))
+    var tr = selectTransform(this.transformRequire(transform, opts))
     if (tr && done) done(null, tr)
     return tr
   }

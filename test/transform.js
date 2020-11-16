@@ -2,7 +2,7 @@ var test = require('tape')
 var path = require('path')
 var deps = require('../')
 var fs   = require('fs')
-var transformResolve = require('../transform-resolve')
+var transformRequire = require('../transform-require')
 
 var fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
 var another = path.resolve(__dirname, 'fixtures/transform/another.glsl')
@@ -12,7 +12,7 @@ var suite   = [[
   'transformResolve sync'
 ], [
   'transformResolve sync', {
-    transformResolve: transformResolve
+    transformRequire: transformRequire
   }]
 ]
 

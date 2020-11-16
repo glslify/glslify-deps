@@ -1,6 +1,6 @@
 var test = require('tape')
 var deps = require('../')
-var transformResolve = require('../transform-resolve')
+var transformRequire = require('../transform-require')
 
 test('resolveTransform', function(t) {
   var dep = deps(__dirname)
@@ -12,7 +12,7 @@ test('resolveTransform', function(t) {
 test('resolveTransform with async resolver', function(t) {
   var dep = deps({
     cwd: __dirname,
-    transformResolve: transformResolve
+    transformRequire: transformRequire
   })
 
   dep.resolveTransform('glslify-hex', function(err, transform) {
