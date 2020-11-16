@@ -214,6 +214,7 @@ Depper.prototype.transform = function(transform, opts) {
  */
 Depper.prototype.resolveTransform = function(transform, done) {
   var opts = { cwd: this._cwd }
+  var self = this
 
   if (typeof transform === 'function') {
     if (done) done(null, transform)
@@ -221,6 +222,7 @@ Depper.prototype.resolveTransform = function(transform, done) {
   }
 
   function selectTransform(tr) {
+    if (self._async) return tr;
     if (!tr || typeof tr.sync !== 'function') {
       var err = new Error('transform ' + transform + ' does not provide a'
       + ' synchronous interface')
