@@ -138,5 +138,9 @@ NodeDepper.prototype._resolveImports = function(imports, opts, done) {
   return deps
 }
 
+NodeDepper.prototype._addDep = function(file) {
+  return Depper.prototype._addDep.call(this, { file: file });
+}
+
 inherits(NodeDepper, Depper)
 module.exports = NodeDepper

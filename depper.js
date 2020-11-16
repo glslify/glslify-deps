@@ -94,12 +94,14 @@ function Depper(opts) {
   opts = opts || {}
 
   this._async      = opts.async || false
-  this._deps       = []
-  this._cwd        = opts.cwd || process.cwd()
-  this._cache      = {}
   this._i          = 0
+  this._deps       = []
+
+  this._cache      = {}
   this._trCache    = {}
   this._fileCache  = opts.files || {}
+  this._cwd        = opts.cwd || process.cwd()
+
   /** @type {TransformDefinition[]} */
   this._transforms = []
   /** @type {TransformDefinition[]} */
@@ -146,16 +148,15 @@ Depper.prototype.inline = function(source, basedir, done) {
 
 /**
  * Internal method to add dependencies
- * @param {string} filename
+ * @param {object} extra
  */
-Depper.prototype._addDep = function(filename) {
-  var dep = {
+Depper.prototype._addDep = function(extra) {
+  var dep = Object.assign({
     id: this._i++
   , deps: {}
-  , file: filename
   , source: null
   , entry: this._i === 1
-  }
+  }, extra)
 
   this._deps.push(dep)
 
