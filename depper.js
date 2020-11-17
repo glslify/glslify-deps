@@ -329,9 +329,7 @@ class Depper extends EventEmitter {
   applyTransforms(filename, src, transforms, done) {
     if (this._async) {
       let i = 0
-
-      next(null, src)
-      function next(err, updated) {
+      const next = (err, updated) => {
         if (err) return done(err)
         if (i >= transforms.length) return done(null, updated)
 
@@ -341,8 +339,9 @@ class Depper extends EventEmitter {
         if (!opts || typeof opts !== 'object') opts = {}
         tr.tr(filename, updated+'', tr.opts, next)
       }
+      next(null, src)
     } else {
-      transforms.forEach(function (tr) {
+      transforms.forEach((tr) => {
         let opts = tr.opts
         if (!opts || typeof opts !== 'object') opts = {}
         src = tr.tr(filename, src+'', tr.opts)

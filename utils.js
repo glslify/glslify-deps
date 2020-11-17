@@ -3,19 +3,19 @@
 const tokenize = require('glsl-tokenizer/string')
 const path = require('path')
 
-function glslifyPreprocessor(data) {
+const glslifyPreprocessor = (data) => {
   return /#pragma glslify:/.test(data)
 }
 
-function glslifyExport(data) {
+const glslifyExport = (data) => {
   return /#pragma glslify:\s*export\(([^\)]+)\)/.exec(data)
 }
 
-function glslifyImport(data) {
+const glslifyImport = (data) => {
   return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^\)]+)\)/.exec(data)
 }
 
-function genInlineName() {
+const genInlineName = () => {
   return '__INLINE__' + Math.random()
 }
 
@@ -26,7 +26,7 @@ function genInlineName() {
  * @param {object|string} pkgJson package.json string data or json
  * @returns {({tr: string, name: string, opts: object})[]}
  */
-function getTransformsFromPkg(pkgJson) {
+const getTransformsFromPkg = (pkgJson) => {
   if (typeof pkgJson === 'string') {
     pkgJson = JSON.parse(pkgJson);
   }
@@ -61,7 +61,7 @@ function getTransformsFromPkg(pkgJson) {
  * @param {string[]} imports
  * @param {string[]} exports
  */
-function extractPreprocessors(source, imports, exports) {
+const extractPreprocessors = (source, imports, exports) => {
   const tokens = tokenize(source)
 
   for (let i = 0; i < tokens.length; i++) {
@@ -78,7 +78,7 @@ function extractPreprocessors(source, imports, exports) {
   }
 }
 
-function getImportName(imp) {
+const getImportName = (imp) => {
   return imp
     .split(/\s*,\s*/)
     .shift()
@@ -88,7 +88,7 @@ function getImportName(imp) {
 }
 
 /** Fast apply */
-function apply(fn, args) {
+const apply = (fn, args) => {
   switch(args.length) {
     case 1:
       return fn(args[0])
@@ -109,18 +109,18 @@ function apply(fn, args) {
  * @param {function} async
  * @returns {(...args, done) => any}
  */
-function mix(sync, async) {
-  function mixed() {
-    if(typeof arguments[arguments.length - 1] === 'function') {
+const mix = (sync, async) => {
+  const mixed = (...args) => {
+    if(typeof args[args.length - 1] === 'function') {
       if (!async) {
         throw Error('There\'s no async function available')
       }
-      apply(async, arguments)
+      apply(async, args)
     }
     if (!sync) {
       throw Error('There\'s no sync function available')
     }
-    return apply(sync, arguments)
+    return apply(sync, args)
   }
 
   mixed.sync = sync;
@@ -218,7 +218,7 @@ const asyncify = (...fns) => {
 }
 
 const cacheWrap = (read, cache) => {
-  function readFromCache(filename) {
+  const readFromCache = (filename) => {
     if (!cache[filename]) {
       cache[filename] = read(filename)
     }
