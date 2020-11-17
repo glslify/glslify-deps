@@ -1,14 +1,12 @@
 // @ts-check
 /** @typedef {import('glsl-resolve')} GlslResolve */
 var path     = require('path')
-var map      = require('map-limit')
 var Emitter  = require('events/')
 var inherits = require('inherits')
-var findup   = require('@choojs/findup')
+var map      = require('map-limit')
 
 var {
   genInlineName,
-  getTransformsFromPkg,
   cacheWrap,
   parseFiles,
 } = require('./utils.js')
@@ -99,7 +97,6 @@ function Depper(opts) {
   this._deps       = []
 
   this._cache      = {}
-  this._trCache    = {}
   this._fileCache  = parseFiles(Object.assign({}, opts.files) || {})
   this._cwd        = opts.cwd || process.cwd()
 
@@ -143,24 +140,6 @@ Depper.prototype.inline = function(source, basedir, done) {
   var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
   this._inlineSource = source
   return this.add(inlineFile, done)
-}
-
-/**
- * Internal method to add dependencies
- * @param {object} extra
- */
-Depper.prototype._addDep = function(file, extra) {
-  var dep = Object.assign({
-    id: this._i++
-  , file: file
-  , deps: {}
-  , source: null
-  , entry: this._i === 1
-  }, extra)
-
-  this._deps.push(dep)
-
-  return dep;
 }
 
 /**
@@ -292,94 +271,51 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
 }
 
 /**
- * Determines which transforms to use for a particular file.
- * The rules here are the same you see in browserify:
- *
- * - your shader files will have your specified transforms applied to them
- * - shader files in node_modules do not get local transforms
- * - all files will apply transforms specified in `glslify.transform` in your
- *   `package.json` file, albeit after any transforms you specified using
- *   `depper.transform`.
- *
- * @param {String} filename The absolute path of the file in question.
- * @param {(err: Error, transforms?: GlslTransform[]) => any} [done] Applies when async true
+ * Internal method to add dependencies
+ * @param {object} extra
  */
-Depper.prototype.getTransformsForFile = function(filename, done) {
-  var self  = this
-  var entry = this._deps[0]
+Depper.prototype._addDep = function(file, extra) {
+  var dep = Object.assign({
+    id: this._i++
+  , file: file
+  , deps: {}
+  , source: null
+  , entry: this._i === 1
+  }, extra)
 
-  if (!entry) return done(new Error(
-    'getTransformsForFile may only be called after adding your entry file'
-  ))
+  this._deps.push(dep)
 
-  var entryDir     = path.dirname(path.resolve(entry.file))
-  var fileDir      = path.dirname(path.resolve(filename))
-  var relative     = path.relative(entryDir, fileDir).split(path.sep)
-  var node_modules = relative.indexOf('node_modules') !== -1
-  var trLocal      = node_modules ? [] : this._transforms
-  var trCache      = this._trCache
-  var pkgName      = 'package.json'
+  return dep;
+}
 
-  if (trCache[fileDir]) {
-    if (this._async) {
-      return done(null, trCache[fileDir])
-    } else {
-      return trCache[fileDir]
-    }
-  }
-
-  function register(transforms, cb) {
-    var result = trLocal
-      .concat(transforms)
-      .concat(self._globalTransforms)
-      // map acts as synchronous if the iterator is always in
-      // the main thread so is compatible with resolveTransform
-      map(result, 1, function(tr, next) {
-        self.resolveTransform(tr.tr, next)
-      }, (err, resolved) => {
-        if (err) {
-          if(cb) return cb(err)
-          throw err
-        }
-        result.forEach((tr, idx) => {
-          tr.tr = resolved[idx]
-        })
-        if(cb) cb(null, result)
+/**
+ * Internal method to register
+ * @param {TransformDefinition[]} transforms
+ * @param {(err: Error, resolved?: TransformResolved[]) => any} cb
+ * @returns {TransformResolved[]}
+ */
+Depper.prototype._register = function(transforms, cb) {
+  var self = this;
+  /** @type {TransformResolved[]} */
+  // @ts-ignore
+  var result = transforms
+      .concat(this._globalTransforms)
+    // map acts as synchronous if the iterator is always in
+    // the main thread so is compatible with resolveTransform
+    map(result, 1, function(tr, next) {
+      self.resolveTransform(tr.tr, next)
+    }, (err, resolved) => {
+      if (err) {
+        if(cb) return cb(err)
+        throw err
+      }
+      result.forEach((tr, idx) => {
+        tr.tr = resolved[idx]
       })
-
-    return trCache[fileDir] = result
-  }
-
-  if (this._async) {
-    findup(fileDir, pkgName, function(err, found) {
-      var notFound = err && err.message === 'not found'
-      if (notFound) return register([], done)
-      if (err) return done(err)
-
-      var pkg = path.join(found, pkgName)
-
-      self.readFile(pkg, function(err, pkgJson) {
-        if (err) return done(err)
-        var transforms;
-        try {
-          transforms = getTransformsFromPkg(pkgJson)
-        } catch(e) { return done(e) }
-
-        register(transforms, done)
-      })
+      if(cb) cb(null, result)
     })
-  } else {
-    try { var found = findup.sync(fileDir, pkgName) }
-    catch (err) {
-      var notFound = err.message === 'not found'
-      if (notFound) return register([])
-      else throw err
-    }
 
-    var pkg = path.join(found, pkgName)
-
-    return register(getTransformsFromPkg(self.readFile(pkg)))
-  }
+  return result
 }
 
 Depper.prototype.readFile = function(filename, done) {
