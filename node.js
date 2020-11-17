@@ -141,8 +141,8 @@ class NodeDepper extends Depper {
     const entryDir = path.dirname(path.resolve(entry.file))
     const fileDir = path.dirname(path.resolve(filename))
     const relative = path.relative(entryDir, fileDir).split(path.sep)
-    const node_modules = relative.indexOf('node_modules') !== -1
-    const trLocal = node_modules ? [] : this._transforms
+    const nodeModules = relative.indexOf('node_modules') !== -1
+    const trLocal = nodeModules ? [] : this._transforms
     const trCache = this._trCache
     const pkgName = 'package.json'
 
@@ -185,7 +185,8 @@ class NodeDepper extends Depper {
       const pkg = path.join(found, pkgName)
       const transforms = getTransformsFromPkg(self.readFile(pkg))
 
-      return trCache[fileDir] = self._register(trLocal.concat(transforms))
+      trCache[fileDir] = self._register(trLocal.concat(transforms))
+      return trCache[fileDir]
     }
   }
 }

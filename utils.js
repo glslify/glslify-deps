@@ -8,11 +8,11 @@ const glslifyPreprocessor = (data) => {
 }
 
 const glslifyExport = (data) => {
-  return /#pragma glslify:\s*export\(([^\)]+)\)/.exec(data)
+  return /#pragma glslify:\s*export\(([^)]+)\)/.exec(data)
 }
 
 const glslifyImport = (data) => {
-  return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^\)]+)\)/.exec(data)
+  return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^)]+)\)/.exec(data)
 }
 
 const genInlineName = () => {
@@ -31,9 +31,10 @@ const getTransformsFromPkg = (pkgJson) => {
   }
 
   const transforms = (
-    pkgJson.glslify &&
-  pkgJson.glslify.transform ||
-  []
+    (
+      pkgJson.glslify &&
+      pkgJson.glslify.transform
+    ) || []
   )
 
   return transforms.map((tr) => {

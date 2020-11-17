@@ -1,7 +1,6 @@
 const test = require('tape')
 const path = require('path')
 const deps = require('../sync')
-const fs = require('fs')
 
 const fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
 

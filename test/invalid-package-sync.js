@@ -8,7 +8,7 @@ const pkgjson = path.resolve(__dirname, 'fixtures/invalid-package/package.json')
 
 test('sync invalid package.json', (t) => {
   let err
-  try { const ds = deps().add(fixture) } catch (e) { err = e }
+  try { deps().add(fixture) } catch (e) { err = e }
   t.ok(err, 'error reported')
 
   try {

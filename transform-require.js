@@ -43,9 +43,11 @@ const transformRequire = (transform, opts, cb) => {
  */
 transformRequire.sync = (transform, opts) => {
   const cwd = opts && opts.cwd
-  return typeof transform === 'string' ? require(nodeResolve.sync(transform, {
-    basedir: cwd
-  })) : transform
+  return typeof transform === 'string'
+    ? require(nodeResolve.sync(transform, {
+        basedir: cwd
+      }))
+    : transform
 }
 
 module.exports = transformRequire

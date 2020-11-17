@@ -30,7 +30,6 @@ test('sync .transform(fn)', (t) => {
 })
 
 test('sync .transform(fn, opts)', (t) => {
-  const src = fs.readFileSync(fake, 'utf8')
   const depper = deps()
   const opts = {
     hello: 'world'

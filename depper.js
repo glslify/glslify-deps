@@ -95,7 +95,7 @@ class Depper extends EventEmitter {
    */
   constructor (opts) {
     super()
-    if (this.constructor == Depper) {
+    if (this.constructor === Depper) {
       throw new Error("Depper classes can't be instantiated.")
     }
     opts = opts || {}
@@ -135,8 +135,7 @@ class Depper extends EventEmitter {
     this._transformRequireAsync = !!opts.transformRequire.sync
 
     if (!this._async && this._transformRequireAsync) {
-      throw new Error('glslify-deps: transformRequire async detected \
-      \nwhen sync context, please ensure your resolver is even with the context')
+      throw new Error('glslify-deps: transformRequire async detected \n when sync context, please ensure your resolver is even with the context')
     }
   }
 
@@ -410,8 +409,8 @@ class Depper extends EventEmitter {
       done = opts
       opts = {}
     }
-    const deps = opts && opts.deps || {}
-    const parallel = opts && opts.parallel || 10
+    const deps = (opts && opts.deps) || {}
+    const parallel = (opts && opts.parallel) || 10
 
     const process = asyncify(
       (result, next) => this.resolve(result[0], opts, next),
