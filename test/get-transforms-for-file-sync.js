@@ -34,8 +34,7 @@ test('sync getTransformsForFile: package.json', (t) => {
 
 test('sync getTransformsForFile(): errors before .add()', (t) => {
   let err
-  try { deps().getTransformsForFile(fixture) }
-  catch (e) { err = e }
+  try { deps().getTransformsForFile(fixture) } catch (e) { err = e }
   t.ok(err)
   t.end()
 })
@@ -53,7 +52,7 @@ test('sync getTransformsForFile(): global transforms', (t) => {
   const transforms = depper.getTransformsForFile(fakePkg)
   t.ok(transforms.length, 'has transforms applied')
 
-  const lastTr    = transforms[transforms.length - 1].tr
+  const lastTr = transforms[transforms.length - 1].tr
   const hasGlobal = transforms.some((tr) => {
     return tr.tr === globalTransform
   })

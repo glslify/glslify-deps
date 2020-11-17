@@ -1,10 +1,10 @@
 const test = require('tape')
 const path = require('path')
 const deps = require('../sync')
-const fs   = require('fs')
+const fs = require('fs')
 
 const fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
-const fake    = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
+const fake = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
 
 test('sync .transform(string)', (t) => {
   const src = fs.readFileSync(fixture, 'utf8')
@@ -30,17 +30,17 @@ test('sync .transform(fn)', (t) => {
 })
 
 test('sync .transform(fn, opts)', (t) => {
-  const src    = fs.readFileSync(fake, 'utf8')
+  const src = fs.readFileSync(fake, 'utf8')
   const depper = deps()
-  const opts   = {
+  const opts = {
     hello: 'world'
   }
 
   depper.transform((file, src, opts) => {
-    return '//'+JSON.stringify(opts)
+    return '//' + JSON.stringify(opts)
   }, opts)
 
   const ds = depper.add(fake)
-  t.equal(ds[0].source, '//'+JSON.stringify(opts), 'source was transformed')
+  t.equal(ds[0].source, '//' + JSON.stringify(opts), 'source was transformed')
   t.end()
 })

@@ -1,7 +1,7 @@
 const test = require('tape')
 const path = require('path')
 const deps = require('../')
-const fs   = require('fs')
+const fs = require('fs')
 
 const fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
 const another = path.resolve(__dirname, 'fixtures/transform/another.glsl')
@@ -63,7 +63,7 @@ test('getTransformsForFile(): global transforms', (t) => {
 
       t.ok(transforms.length, 'has transforms applied')
 
-      const lastTr    = transforms[transforms.length - 1].tr
+      const lastTr = transforms[transforms.length - 1].tr
       const hasGlobal = transforms.some((tr) => tr.tr === globalTransform)
 
       t.ok(hasGlobal, 'global transform has been included in file')

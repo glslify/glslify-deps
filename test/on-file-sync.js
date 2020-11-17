@@ -7,7 +7,7 @@ const another = path.resolve(__dirname, 'fixtures/transform/another.glsl')
 const fakePkg = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
 
 test('sync on("file")', (t) => {
-  const depper   = deps()
+  const depper = deps()
   const expected = [fixture, another, fakePkg]
 
   t.plan(3)

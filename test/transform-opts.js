@@ -13,7 +13,7 @@ test('package.json: transform options', (t) => {
       .glslify
       .transform[0][1]
 
-    t.equal(deps[0].source, '//'+JSON.stringify(opts), 'transformed correctly')
+    t.equal(deps[0].source, '//' + JSON.stringify(opts), 'transformed correctly')
     t.end()
   })
 })

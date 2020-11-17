@@ -13,8 +13,8 @@ const transformRequire = require('./transform-require')
 
 const {
   getTransformsFromPkg,
-  mix,
-} = require('./utils');
+  mix
+} = require('./utils')
 
 /**
  * Creates a mixed sync/async file reader
@@ -53,7 +53,7 @@ class NodeDepper extends Depper {
   /**
    * @param {DepperOptions & NodeDepperOptions} [opts]
    */
-  constructor(opts) {
+  constructor (opts) {
     opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
     // @ts-ignore
     opts.resolve = opts.resolve || mix(glslResolve.sync, glslResolve)
@@ -62,8 +62,8 @@ class NodeDepper extends Depper {
     opts.readFile = opts.readFile || createDefaultRead()
     super(opts)
 
-    this._cwd        = opts.cwd || process.cwd()
-    this._trCache    = {}
+    this._cwd = opts.cwd || process.cwd()
+    this._trCache = {}
 
     if (typeof this._cwd !== 'string') {
       throw new Error('glslify-deps: cwd must be a string path')
@@ -79,7 +79,7 @@ class NodeDepper extends Depper {
    * @param {(err: Error, deps: DepperGraph[]) => any} [done]
    * @returns {DepperGraph[]}
    */
-  inline(source, basedir, done) {
+  inline (source, basedir, done) {
     const inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
     return super.inline(source, inlineFile, done)
   }
@@ -89,8 +89,8 @@ class NodeDepper extends Depper {
    * @param {String} filename The absolute path of this file.
    * @param {(err: Error, deps?: object[]) => any} [done]
    */
-  add(filename, done) {
-    const resolved = path.resolve(filename);
+  add (filename, done) {
+    const resolved = path.resolve(filename)
     return super.add(resolved, {
       basedir: path.dirname(resolved)
     }, done)
@@ -102,7 +102,7 @@ class NodeDepper extends Depper {
    * @param {(err: Error, transform?: GlslTransform) => any} [done] Applies if is defined
    * @return {Function}
    */
-  resolveTransform(transform, done) {
+  resolveTransform (transform, done) {
     return super.resolveTransform(transform, {
       cwd: this._cwd
     }, done)
@@ -113,16 +113,14 @@ class NodeDepper extends Depper {
    * @param {*} filename
    * @param {*} [done]
    */
-  readFile(filename, done) {
-    if (path.basename(filename) !== this._inlineName)
-      return this._readFile(filename, done)
+  readFile (filename, done) {
+    if (path.basename(filename) !== this._inlineName) { return this._readFile(filename, done) }
 
-    if(this._async) {
+    if (this._async) {
       return done(null, this._inlineSource)
     }
     return this._inlineSource
   }
-
 
   /**
    * @override
@@ -130,21 +128,23 @@ class NodeDepper extends Depper {
    * @param {(err: Error, transforms?: TransformResolved[]) => any} [done] Applies when async true
    * @returns {TransformResolved[]} List of transform for a file
    */
-  getTransformsForFile(filename, done) {
-    const self  = this
+  getTransformsForFile (filename, done) {
+    const self = this
     const entry = this._deps[0]
 
-    if (!entry) return done(new Error(
-      'getTransformsForFile may only be called after adding your entry file'
-    ))
+    if (!entry) {
+      return done(new Error(
+        'getTransformsForFile may only be called after adding your entry file'
+      ))
+    }
 
-    const entryDir     = path.dirname(path.resolve(entry.file))
-    const fileDir      = path.dirname(path.resolve(filename))
-    const relative     = path.relative(entryDir, fileDir).split(path.sep)
+    const entryDir = path.dirname(path.resolve(entry.file))
+    const fileDir = path.dirname(path.resolve(filename))
+    const relative = path.relative(entryDir, fileDir).split(path.sep)
     const node_modules = relative.indexOf('node_modules') !== -1
-    const trLocal      = node_modules ? [] : this._transforms
-    const trCache      = this._trCache
-    const pkgName      = 'package.json'
+    const trLocal = node_modules ? [] : this._transforms
+    const trCache = this._trCache
+    const pkgName = 'package.json'
 
     if (trCache[fileDir]) {
       if (this._async) {
@@ -164,10 +164,10 @@ class NodeDepper extends Depper {
 
         self.readFile(pkg, (err, pkgJson) => {
           if (err) return done(err)
-          let transforms;
+          let transforms
           try {
             transforms = getTransformsFromPkg(pkgJson)
-          } catch(e) { return done(e) }
+          } catch (e) { return done(e) }
 
           trCache[fileDir] = self._register(trLocal.concat(transforms), done)
         })

@@ -10,7 +10,6 @@ test('sync resolveTransform', (t) => {
 })
 
 test('sync resolveTransform throws error when resolveTransform is async', (t) => {
-
   t.throws(() => {
     deps({
       cwd: __dirname,

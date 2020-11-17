@@ -26,7 +26,7 @@ const transformRequire = (transform, opts, cb) => {
   }
   process.nextTick(() => {
     cb(null, transform)
-  });
+  })
 }
 
 /**
@@ -48,4 +48,4 @@ transformRequire.sync = (transform, opts) => {
   })) : transform
 }
 
-module.exports = transformRequire;
+module.exports = transformRequire

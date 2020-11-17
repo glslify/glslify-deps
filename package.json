@@ -3,6 +3,7 @@
   "version": "1.3.1",
   "scripts": {
     "test": "node test | tap-spec",
+    "prepublishOnly": "standard",
     "coverage": "istanbul cover test/index.js && http-server coverage/lcov-report/glslify-deps"
   },
   "dependencies": {
@@ -18,9 +19,17 @@
   "devDependencies": {
     "glsl-random": "0.0.4",
     "glslify-hex": "^2.0.0",
+    "husky": "^4.3.0",
     "istanbul": "^0.3.5",
     "tap-spec": "^4.1.1",
-    "tape": "^3.0.2"
+    "tape": "^3.0.2",
+    "standard": "*"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "standard && npm test",
+      "pre-push": "standard && npm test"
+    }
   },
   "description": "Walk the dependency graph of a glslify shader.",
   "main": "index.js",

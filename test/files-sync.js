@@ -3,10 +3,10 @@ const deps = require('../sync')
 
 test('sync opts.files: entry file', (t) => {
   const src = [
-      'precision mediump float;'
-    , 'void main() {'
-    , '  gl_FragColor = vec4(a(), 1.0);'
-    , '}'
+    'precision mediump float;',
+    'void main() {',
+    '  gl_FragColor = vec4(a(), 1.0);',
+    '}'
   ].join('\n')
 
   const depper = deps({

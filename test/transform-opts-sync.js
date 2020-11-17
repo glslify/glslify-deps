@@ -11,6 +11,6 @@ test('sync package.json: transform options', (t) => {
     .glslify
     .transform[0][1]
 
-  t.equal(ds[0].source, '//'+JSON.stringify(opts), 'transformed correctly')
+  t.equal(ds[0].source, '//' + JSON.stringify(opts), 'transformed correctly')
   t.end()
 })

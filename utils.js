@@ -19,7 +19,6 @@ const genInlineName = () => {
   return '__INLINE__' + Math.random()
 }
 
-
 /**
  * Gets glslify transform from given package.json
  *
@@ -28,13 +27,13 @@ const genInlineName = () => {
  */
 const getTransformsFromPkg = (pkgJson) => {
   if (typeof pkgJson === 'string') {
-    pkgJson = JSON.parse(pkgJson);
+    pkgJson = JSON.parse(pkgJson)
   }
 
   const transforms = (
-    pkgJson['glslify']
-  && pkgJson['glslify']['transform']
-  || []
+    pkgJson.glslify &&
+  pkgJson.glslify.transform ||
+  []
   )
 
   return transforms.map((tr) => {
@@ -51,7 +50,7 @@ const getTransformsFromPkg = (pkgJson) => {
     }
 
     return { tr: key, opts: opt, name: key }
-  });
+  })
 }
 
 /**
@@ -89,7 +88,7 @@ const getImportName = (imp) => {
 
 /** Fast apply */
 const apply = (fn, args) => {
-  switch(args.length) {
+  switch (args.length) {
     case 1:
       return fn(args[0])
     case 2:
@@ -111,7 +110,7 @@ const apply = (fn, args) => {
  */
 const mix = (sync, async) => {
   const mixed = (...args) => {
-    if(typeof args[args.length - 1] === 'function') {
+    if (typeof args[args.length - 1] === 'function') {
       if (!async) {
         throw Error('There\'s no async function available')
       }
@@ -123,12 +122,11 @@ const mix = (sync, async) => {
     return apply(sync, args)
   }
 
-  mixed.sync = sync;
-  mixed.async = async;
+  mixed.sync = sync
+  mixed.async = async
 
   return mixed
 }
-
 
 /**
  * Allows reuse sync/async logics detecting if done is defined to select which strategy to use.
@@ -171,8 +169,8 @@ const asyncify = (...fns) => {
       throw new Error('asyncify: no functions detected')
     }
 
-    if(typeof state[state.length - 1] === 'function') {
-      done = state.pop();
+    if (typeof state[state.length - 1] === 'function') {
+      done = state.pop()
       cursor = state.length
     }
 
@@ -181,11 +179,11 @@ const asyncify = (...fns) => {
     }
 
     if (!done) {
-      for(; i < fns.length; i++) {
+      for (; i < fns.length; i++) {
         if (typeof fns[i] !== 'function') {
           throw error()
         }
-        state[cursor + i] = fns[i](state);
+        state[cursor + i] = fns[i](state)
       }
     } else {
       /**
@@ -194,7 +192,7 @@ const asyncify = (...fns) => {
        * @param {any} [result]
        */
       const next = (err, result) => {
-        if(err) {
+        if (err) {
           done(err)
         } else {
           state[cursor + i++] = result
@@ -213,7 +211,7 @@ const asyncify = (...fns) => {
       fns[i](state, next)
     }
 
-    return state;
+    return state
   }
 }
 
@@ -228,7 +226,7 @@ const cacheWrap = (read, cache) => {
   const readFromCacheAsync = (filename, done) => {
     if (!cache[filename]) {
       return read(filename, (err, content) => {
-        if (err) done(err);
+        if (err) done(err)
         done(err, cache[filename] = content)
       })
     }

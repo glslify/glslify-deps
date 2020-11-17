@@ -9,9 +9,8 @@ const {
   parseFiles,
   getImportName,
   extractPreprocessors,
-  asyncify,
+  asyncify
 } = require('./utils.js')
-
 
 /**
  * @callback GlslTransformSync
@@ -94,20 +93,20 @@ class Depper extends EventEmitter {
   /**
    * @param {DepperOptions} [opts] options
    */
-  constructor(opts) {
+  constructor (opts) {
     super()
     if (this.constructor == Depper) {
-      throw new Error("Depper classes can't be instantiated.");
+      throw new Error("Depper classes can't be instantiated.")
     }
     opts = opts || {}
     this._inlineSource = ''
     this._inlineName = genInlineName()
-    this._async      = opts.async || false
-    this._i          = 0
-    this._deps       = []
+    this._async = opts.async || false
+    this._i = 0
+    this._deps = []
 
-    this._cache      = {}
-    this._fileCache  = parseFiles(Object.assign({}, opts.files) || {})
+    this._cache = {}
+    this._fileCache = parseFiles(Object.assign({}, opts.files) || {})
 
     /** @type {TransformDefinition[]} */
     this._transforms = []
@@ -124,7 +123,7 @@ class Depper extends EventEmitter {
       throw new Error('glslify-deps: resolve must be defined')
     }
 
-    this.resolve = opts.resolve;
+    this.resolve = opts.resolve
 
     if (!opts.transformRequire) {
       throw new Error('glslify-deps: transformRequire must be defined')
@@ -149,7 +148,7 @@ class Depper extends EventEmitter {
    * @param {(err: Error, deps: DepperGraph[]) => any} [done]
    * @returns {DepperGraph[]}
    */
-  inline(source, filename, done) {
+  inline (source, filename, done) {
     this._inlineSource = source
     return this.add(filename || this._inlineName, done)
   }
@@ -170,18 +169,18 @@ class Depper extends EventEmitter {
    *
    * If sync returns an array of dependencies discovered so far as its second argument.
    */
-  add(filename, opts, done) {
+  add (filename, opts, done) {
     if (typeof opts === 'function') {
       done = opts
       opts = {}
     }
 
-    const self    = this
+    const self = this
     const exports = []
     const imports = []
     const dep = this._addDep(filename)
     const resolveOpts = Object.assign({
-      deps: dep.deps,
+      deps: dep.deps
     }, opts)
 
     const process = asyncify(
@@ -196,11 +195,10 @@ class Depper extends EventEmitter {
         extractPreprocessors(dep.source = result[2], imports, exports)
         return self._resolveImports(imports, resolveOpts, next)
       }, (_, next) => {
-        if(next) {
+        if (next) {
           next(null, self._deps)
         }
       })
-
 
     if (this._async) {
       process(done || (() => {
@@ -219,8 +217,8 @@ class Depper extends EventEmitter {
    * @param {(err: Error, transforms?: TransformResolved[]) => any} [done] Applies when async true
    * @returns {TransformResolved[]} List of transform for a file
    */
-  getTransformsForFile(filename, done) {
-    if(done) {
+  getTransformsForFile (filename, done) {
+    if (done) {
       done(null, [])
     }
     console.warn('glslify-deps: depper.getTransformsForFile() not yet implemented')
@@ -248,7 +246,7 @@ class Depper extends EventEmitter {
    * @param {Boolean} [opts.global] adds transform to global scope
    * @param {Boolean} [opts.post]
    */
-  transform(transform, opts) {
+  transform (transform, opts) {
     const name = typeof transform === 'string' ? transform : null
     const list = opts && opts.global
       ? this._globalTransforms
@@ -257,7 +255,6 @@ class Depper extends EventEmitter {
     // post transforms are ignored by glslify-deps, to be handled
     // by glslify after the file has been bundled.
     if (opts && opts.post) return this
-
 
     list.push({ tr: transform, opts: opts, name: name })
 
@@ -276,7 +273,7 @@ class Depper extends EventEmitter {
    * @param {(err: Error, transform?: GlslTransform) => any} [done] Applies if is defined
    * @return {Function}
    */
-  resolveTransform(transform, opts, done) {
+  resolveTransform (transform, opts, done) {
     if (typeof opts === 'function') {
       done = opts
       opts = {}
@@ -288,10 +285,10 @@ class Depper extends EventEmitter {
     }
 
     const selectTransform = (tr) => {
-      if (this._async) return tr;
+      if (this._async) return tr
       if (!tr || typeof tr.sync !== 'function') {
-        const err = new Error('transform ' + transform + ' does not provide a'
-        + ' synchronous interface')
+        const err = new Error('transform ' + transform + ' does not provide a' +
+        ' synchronous interface')
         if (done) {
           done(err)
           return null
@@ -306,7 +303,7 @@ class Depper extends EventEmitter {
       this.transformRequire(transform, opts, (err, resolved) => {
         if (err) return done(err)
         return done(null, selectTransform(resolved))
-      });
+      })
     } else {
       const tr = selectTransform(this.transformRequire(transform, opts))
       if (tr && done) done(null, tr)
@@ -326,7 +323,7 @@ class Depper extends EventEmitter {
    * @param {TransformResolved[]} transforms The transforms you'd like to apply.
    * @param {(err: Error, result?: string) => any} [done] Applies when async true
    */
-  applyTransforms(filename, src, transforms, done) {
+  applyTransforms (filename, src, transforms, done) {
     if (this._async) {
       let i = 0
       const next = (err, updated) => {
@@ -337,14 +334,14 @@ class Depper extends EventEmitter {
         let opts = tr.opts
 
         if (!opts || typeof opts !== 'object') opts = {}
-        tr.tr(filename, updated+'', tr.opts, next)
+        tr.tr(filename, updated + '', tr.opts, next)
       }
       next(null, src)
     } else {
       transforms.forEach((tr) => {
         let opts = tr.opts
         if (!opts || typeof opts !== 'object') opts = {}
-        src = tr.tr(filename, src+'', tr.opts)
+        src = tr.tr(filename, src + '', tr.opts)
       })
       return src
     }
@@ -354,18 +351,18 @@ class Depper extends EventEmitter {
    * Internal method to add dependencies
    * @param {object} [extra]
    */
-  _addDep(file, extra) {
+  _addDep (file, extra) {
     const dep = Object.assign({
-      id: this._i++
-    , file: file
-    , deps: {}
-    , source: null
-    , entry: this._i === 1
+      id: this._i++,
+      file: file,
+      deps: {},
+      source: null,
+      entry: this._i === 1
     }, extra)
 
     this._deps.push(dep)
 
-    return dep;
+    return dep
   }
 
   /**
@@ -374,25 +371,25 @@ class Depper extends EventEmitter {
    * @param {(err: Error, resolved?: TransformResolved[]) => any} [cb]
    * @returns {TransformResolved[]}
    */
-  _register(transforms, cb) {
+  _register (transforms, cb) {
     /** @type {TransformResolved[]} */
     // @ts-ignore
     const result = transforms
-        .concat(this._globalTransforms)
+      .concat(this._globalTransforms)
       // map acts as synchronous if the iterator is always in
       // the main thread so is compatible with resolveTransform
-      map(result, 1, (tr, next) => {
-        this.resolveTransform(tr.tr, next)
-      }, (err, resolved) => {
-        if (err) {
-          if(cb) return cb(err)
-          throw err
-        }
-        result.forEach((tr, idx) => {
-          tr.tr = resolved[idx]
-        })
-        if(cb) cb(null, result)
+    map(result, 1, (tr, next) => {
+      this.resolveTransform(tr.tr, next)
+    }, (err, resolved) => {
+      if (err) {
+        if (cb) return cb(err)
+        throw err
+      }
+      result.forEach((tr, idx) => {
+        tr.tr = resolved[idx]
       })
+      if (cb) cb(null, result)
+    })
 
     return result
   }
@@ -408,7 +405,7 @@ class Depper extends EventEmitter {
    * @param {(err: Error) => any} [done]
    * @return {object} Resolved dependencies
    */
-  _resolveImports(imports, opts, done) {
+  _resolveImports (imports, opts, done) {
     if (typeof opts === 'function') {
       done = opts
       opts = {}
@@ -452,11 +449,10 @@ class Depper extends EventEmitter {
     return deps
   }
 
-  readFile(filename, done) {
-    if (filename !== this._inlineName)
-      return this._readFile(filename, done)
+  readFile (filename, done) {
+    if (filename !== this._inlineName) { return this._readFile(filename, done) }
 
-    if(this._async) {
+    if (this._async) {
       return done(null, this._inlineSource)
     }
     return this._inlineSource

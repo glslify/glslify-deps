@@ -20,7 +20,7 @@ test('sync .inline(): creates a dependency tree from an inline shader source', (
   ].join('\n')
 
   const tree1 = deps().inline(src2, path.join(__dirname, 'fixtures',
-  'transform'))
+    'transform'))
   t.equal(tree1.length, 4, 'loads the expected amount of files')
   t.equal(tree1[0].source, src2, 'source is equivalent')
 })
