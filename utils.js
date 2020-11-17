@@ -1,7 +1,7 @@
 // @ts-check
 
-var tokenize = require('glsl-tokenizer/string')
-var path = require('path')
+const tokenize = require('glsl-tokenizer/string')
+const path = require('path')
 
 function glslifyPreprocessor(data) {
   return /#pragma glslify:/.test(data)
@@ -31,19 +31,19 @@ function getTransformsFromPkg(pkgJson) {
     pkgJson = JSON.parse(pkgJson);
   }
 
-  var transforms = (
+  const transforms = (
     pkgJson['glslify']
   && pkgJson['glslify']['transform']
   || []
   )
 
-  return transforms.map(function(key) {
-    var transform = Array.isArray(key)
-      ? key
-      : [key, {}]
+  return transforms.map((tr) => {
+    const transform = Array.isArray(tr)
+      ? tr
+      : [tr, {}]
 
-    var key = transform[0]
-    var opt = transform[1]
+    const key = transform[0]
+    const opt = transform[1]
 
     if (opt) {
       delete opt.global
@@ -62,17 +62,17 @@ function getTransformsFromPkg(pkgJson) {
  * @param {string[]} exports
  */
 function extractPreprocessors(source, imports, exports) {
-  var tokens = tokenize(source)
+  const tokens = tokenize(source)
 
-  for (var i = 0; i < tokens.length; i++) {
-    var token = tokens[i]
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]
     if (token.type !== 'preprocessor') continue
 
-    var data = token.data
+    const data = token.data
     if (!glslifyPreprocessor(data)) continue
 
-    var exp = glslifyExport(data)
-    var imp = glslifyImport(data)
+    const exp = glslifyExport(data)
+    const imp = glslifyImport(data)
     if (exp) exports.push(exp[1])
     if (imp) imports.push(imp[2])
   }
@@ -135,8 +135,8 @@ function mix(sync, async) {
  * Arguments must be functions, if sync is detected then takes the returned value,
  * otherwise when async next will be defined and will take the result from there
  *
- * @param {...(prevState: any[], next?: (err?: Error, result?: any) => null) => any} args
- * @returns {((initialState?: any[], done?: (err: Error, state?: any[]) => any) => any[])&((done?: (err: Error, state?: any[]) => any) => any[])}
+ * @param {...(prevState: any[], next?: (err?: Error, result?: any) => void) => void} fns
+ * @returns {((initialState?: any[], done?: (err: Error, state?: any[]) => any) => void[])&((done?: (err: Error, state?: any[]) => any) => any[])}
  * @example
  *
  * const process = asyncify(
@@ -152,23 +152,21 @@ function mix(sync, async) {
  * process(['bar'], (err, result) => console.log(result)) // ['foo', 'bar', 'foobar']
  *
  */
-function asyncify() {
-  var fns = arguments;
-  return function(initialState, done) {
+const asyncify = (...fns) => {
+  return (initialState, done) => {
     if (typeof initialState === 'function') {
       done = initialState
       initialState = []
     }
 
-    var state = initialState || []
+    const state = initialState || []
+    let cursor = state.length
+    let i = 0
 
     if (!Array.isArray(state)) {
       throw new Error('asyncify: initialState must be an array')
     }
 
-    var cursor = state.length
-
-    var i = 0
     if (!fns.length) {
       throw new Error('asyncify: no functions detected')
     }
@@ -178,7 +176,7 @@ function asyncify() {
       cursor = state.length
     }
 
-    function error() {
+    const error = () => {
       return new Error('asyncify: arguments must be functions')
     }
 
@@ -190,7 +188,12 @@ function asyncify() {
         state[cursor + i] = fns[i](state);
       }
     } else {
-      function next(err, result) {
+      /**
+       *
+       * @param {Error} [err]
+       * @param {any} [result]
+       */
+      const next = (err, result) => {
         if(err) {
           done(err)
         } else {
@@ -214,7 +217,7 @@ function asyncify() {
   }
 }
 
-function cacheWrap(read, cache) {
+const cacheWrap = (read, cache) => {
   function readFromCache(filename) {
     if (!cache[filename]) {
       cache[filename] = read(filename)
@@ -222,14 +225,14 @@ function cacheWrap(read, cache) {
     return cache[filename]
   }
 
-  function readFromCacheAsync(filename, done) {
+  const readFromCacheAsync = (filename, done) => {
     if (!cache[filename]) {
       return read(filename, (err, content) => {
         if (err) done(err);
         done(err, cache[filename] = content)
       })
     }
-    return process.nextTick(function() {
+    return process.nextTick(() => {
       done(null, cache[filename])
     })
   }
@@ -237,11 +240,11 @@ function cacheWrap(read, cache) {
   return mix(readFromCache, readFromCacheAsync)
 }
 
-function parseFiles(files) {
+const parseFiles = (files) => {
   // resolve all files such that they match
   // all of the paths glslify handles, which are otherwise
   // absolute
-  return Object.keys(files).reduce(function(newCache, file) {
+  return Object.keys(files).reduce((newCache, file) => {
     newCache[path.resolve(file)] = files[file]
     return newCache
   }, {})

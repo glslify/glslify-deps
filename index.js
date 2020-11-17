@@ -1,9 +1,11 @@
-var NodeDepper = require('./node')
+const NodeDepper = require('./node')
 
-module.exports = function(opts) {
+module.exports = (opts) => {
   opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
   opts.async = true
-  return NodeDepper(opts)
+  return new NodeDepper(opts)
 }
 
-module.exports.sync = NodeDepper
+module.exports.sync = (opts) => {
+  return new NodeDepper(opts)
+}

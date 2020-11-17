@@ -1,6 +1,6 @@
 // @ts-check
 /** @typedef {import('./depper').GlslTransform} GlslTransform */
-var nodeResolve = require('resolve')
+const nodeResolve = require('resolve')
 
 /**
  * Async transform resolution in node.
@@ -14,8 +14,8 @@ var nodeResolve = require('resolve')
  * @param {string} opts.cwd current work directory
  * @param {(err: Error, transform?: GlslTransform) => any} cb
  */
-var transformRequire = function (transform, opts, cb) {
-  var cwd = opts && opts.cwd
+const transformRequire = (transform, opts, cb) => {
+  const cwd = opts && opts.cwd
   if (typeof transform === 'string') {
     return nodeResolve(transform, {
       basedir: cwd
@@ -41,8 +41,8 @@ var transformRequire = function (transform, opts, cb) {
  * @param {string} opts.cwd current work directory
  * @returns {GlslTransform}
  */
-transformRequire.sync = function (transform, opts) {
-  var cwd = opts && opts.cwd
+transformRequire.sync = (transform, opts) => {
+  const cwd = opts && opts.cwd
   return typeof transform === 'string' ? require(nodeResolve.sync(transform, {
     basedir: cwd
   })) : transform
