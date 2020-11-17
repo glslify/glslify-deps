@@ -9,6 +9,9 @@ var {
   genInlineName,
   cacheWrap,
   parseFiles,
+  getImportName,
+  extractPreprocessors,
+  asyncify,
 } = require('./utils.js')
 
 
@@ -143,10 +146,76 @@ Depper.prototype.inline = function(source, basedir, done) {
 }
 
 /**
- * Add method dummy interface
+ * Adds a shader file to the graph, including its dependencies
+ * which are resolved in this step. Transforms are also applied
+ * in the process too, as they may potentially add or remove dependent
+ * modules.
+ *
+ * @param {String} filename The absolute path of this file.
+ * @param {Object} [opts] The options will be pased to _resolveImports function.
+ * @param {(err: Error, deps?: object[]) => any} [done]
+ *
+ * If async is defined then `done` callback will be called when the entire graph has been
+ * resolved, and will include an array of dependencies discovered
+ * so far as its second argument.
+ *
+ * If sync returns an array of dependencies discovered so far as its second argument.
  */
-Depper.prototype.add = function(filename, cb) {
+Depper.prototype.add = function(filename, opts, done) {
+  if (typeof opts === 'function') {
+    done = opts
+    opts = {}
+  }
 
+  var self    = this
+  var exports = []
+  var imports = []
+  var dep = this._addDep(filename)
+  var resolveOpts = Object.assign({
+    deps: dep.deps,
+  }, opts)
+
+  var process = asyncify(
+    function(_, next) {return self.readFile(filename, next) },
+    function(_, next) {return self.getTransformsForFile(filename, next) },
+    function(result, next) {
+      // @ts-ignore
+      self.emit('file', filename)
+      return self.applyTransforms(filename, result[0], result[1], next)
+    },
+    function(result, next) {
+      extractPreprocessors(dep.source = result[2], imports, exports)
+      return self._resolveImports(imports, resolveOpts, next)
+    }, function(_, next) {
+      if(next) {
+        next(null, self._deps)
+      }
+    })
+
+
+  if (this._async) {
+    process(done || function() {
+      console.warn('glslify-deps: depper.add() has not a callback defined using async flow')
+    })
+    return dep
+  } else {
+    process()
+    return this._deps
+  }
+}
+
+/**
+ * Dummy internal function for resolve transforms for a file
+ * @param {String} filename The absolute path of the file in question.
+ * @param {(err: Error, transforms?: GlslTransform[]) => any} [done] Applies when async true
+ * @returns {GlslTransform[]} List of transform for a file
+ */
+Depper.prototype.getTransformsForFile = function(filename, done) {
+  if(done) {
+    done(null, [])
+  }
+  console.warn('glslify-deps: depper.getTransformsForFile() not yet implemented')
+  return []
 }
 
 /**
@@ -272,7 +341,7 @@ Depper.prototype.applyTransforms = function(filename, src, transforms, done) {
 
 /**
  * Internal method to add dependencies
- * @param {object} extra
+ * @param {object} [extra]
  */
 Depper.prototype._addDep = function(file, extra) {
   var dep = Object.assign({
@@ -316,6 +385,62 @@ Depper.prototype._register = function(transforms, cb) {
     })
 
   return result
+}
+
+/**
+ * Internal async method to retrieve dependencies
+ * resolving imports using the internal cache
+ *
+ * @param {string[]} imports
+ * @param {object} [opts] The options will be pased to resolve function.
+ * @param {object} [opts.deps] Existing dependencies
+ * @param {number} [opts.parallel=10] Parallel threads when async
+ * @param {(err: Error) => any} [done]
+ * @return {object} Resolved dependencies
+ */
+Depper.prototype._resolveImports = function(imports, opts, done) {
+  if (typeof opts === 'function') {
+    done = opts
+    opts = {}
+  }
+  var self = this
+  var deps = opts && opts.deps || {}
+  var parallel = opts && opts.parallel || 10
+
+  var process = asyncify(
+    function(result, next) { return self.resolve(result[0], opts, next) },
+    function(result, next) {
+      var importName = result[0]
+      var resolved = result[1]
+      if (self._cache[resolved]) {
+        deps[importName] = self._cache[resolved].id
+        return next && next()
+      }
+      if (next) {
+        self._cache[resolved] = self.add(resolved, function(err) {
+          if (err) return next(err)
+          deps[importName] = self._cache[resolved].id
+          next()
+        })
+      } else {
+        var idx = self._i
+        self._cache[resolved] = self.add(resolved)[idx]
+        deps[importName] = self._cache[resolved].id
+      }
+    }
+  )
+
+  if (this._async) {
+    map(imports, parallel, function(imp, next) {
+      process([getImportName(imp)], next)
+    }, done)
+  } else {
+    imports.forEach(function (imp) {
+      process([getImportName(imp)])
+    })
+  }
+
+  return deps
 }
 
 Depper.prototype.readFile = function(filename, done) {

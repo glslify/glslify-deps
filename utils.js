@@ -129,13 +129,14 @@ function mix(sync, async) {
   return mixed
 }
 
+
 /**
  * Allows reuse sync/async logics detecting if done is defined to select which strategy to use.
  * Arguments must be functions, if sync is detected then takes the returned value,
  * otherwise when async next will be defined and will take the result from there
  *
- * @param {...(prevState: any[], next?: (err: Error, result?: any) => null) => any} args
- * @returns {(initialState?: any[], done?: (err: Error, state?: any[]) => any) => any[]}
+ * @param {...(prevState: any[], next?: (err?: Error, result?: any) => null) => any} args
+ * @returns {((initialState?: any[], done?: (err: Error, state?: any[]) => any) => any[])&((done?: (err: Error, state?: any[]) => any) => any[])}
  * @example
  *
  * const process = asyncify(
