@@ -1,30 +1,26 @@
-var test = require('tape')
-var path = require('path')
-var deps = require('../')
-var fs   = require('fs')
+const test = require('tape')
+const path = require('path')
+const deps = require('../')
+const fs   = require('fs')
 
-var fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
-var another = path.resolve(__dirname, 'fixtures/transform/another.glsl')
-var fakePkg = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
+const fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
 
-test('applyTransforms', function(t) {
-  var src = fs.readFileSync(fixture, 'utf8')
-  var dep = deps()
+test('applyTransforms', (t) => {
+  const src = fs.readFileSync(fixture, 'utf8')
+  const dep = deps()
 
   t.plan(2)
 
-  dep.applyTransforms(fixture, src, [], function(err, dst) {
+  dep.applyTransforms(fixture, src, [], (err, dst) => {
     if (err) return t.ifError(err)
     t.equal(src, dst, 'should not transform when list empty')
   })
 
   dep.applyTransforms(fixture, src
     , [{
-      tr: function(file, src, opts, done) {
-        done(null, src.toUpperCase())
-      }
+      tr: (file, src, opts, done) => done(null, src.toUpperCase())
     }]
-    , function(err, dst) {
+    , (err, dst) => {
       if (err) return t.ifError(err)
       t.equal(src.toUpperCase(), dst, 'should transform when supplied a transform')
     })

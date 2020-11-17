@@ -1,5 +1,4 @@
-var fs     = require('fs')
-var depper = require('../')({
+const depper = require('../')({
   files: {
     '-': [
         'precision mediump float;'
@@ -15,7 +14,7 @@ var depper = require('../')({
 })
 
 depper.transform('glslify-hex')
-depper.add('-', function(err, deps) {
+depper.add('-', (err, deps) => {
   if (err) throw err
 
   console.log(JSON.stringify(deps, null, 2))

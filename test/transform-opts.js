@@ -1,16 +1,15 @@
-var test = require('tape')
-var deps = require('../')
-var path = require('path')
-var fs   = require('fs')
+const test = require('tape')
+const deps = require('../')
+const path = require('path')
 
-var fixture = path.resolve(__dirname, 'fixtures/transform-opts/index.glsl')
-var pkgjson = path.resolve(__dirname, 'fixtures/transform-opts/package.json')
+const fixture = path.resolve(__dirname, 'fixtures/transform-opts/index.glsl')
+const pkgjson = path.resolve(__dirname, 'fixtures/transform-opts/package.json')
 
-test('package.json: transform options', function(t) {
-  deps(path.dirname(fixture)).add(fixture, function(err, deps) {
+test('package.json: transform options', (t) => {
+  deps(path.dirname(fixture)).add(fixture, (err, deps) => {
     if (err) return t.fail(err)
 
-    var opts = require(pkgjson)
+    const opts = require(pkgjson)
       .glslify
       .transform[0][1]
 
