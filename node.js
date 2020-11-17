@@ -10,7 +10,8 @@ var transformRequire = require('./transform-require')
 var {
   getImportName,
   extractPreprocessors,
-  mix
+  mix,
+  asyncify
 } = require('./utils');
 
 function createDefaultRead() {
@@ -34,7 +35,7 @@ function NodeDepper(opts) {
   if (!(this instanceof NodeDepper)) return new NodeDepper(opts)
   opts = (typeof opts === 'string' ? { cwd: opts } : opts) || {}
   opts.resolve = opts.resolve || mix(glslResolve.sync, glslResolve)
-  // keeps the original behaviour of transform resolution
+  // keeps the original behaviour of transform resolution but overridable
   opts.transformRequire = opts.transformRequire || transformRequire.sync
   opts.readFile = opts.readFile || createDefaultRead()
   Depper.call(this, opts)
@@ -63,47 +64,35 @@ NodeDepper.prototype.add = function(filename, done) {
 
   var dep = this._addDep(filename)
 
+  var process = asyncify(
+    function(_, next) {return self.readFile(filename, next) },
+    function(_, next) {return self.getTransformsForFile(filename, next) },
+    function(result, next) {
+      self.emit('file', filename)
+      return self.applyTransforms(filename, result[0], result[1], next)
+    },
+    function(result, next) {
+      extractPreprocessors(dep.source = result[2], imports, exports)
+      return self._resolveImports(imports, {
+          deps: dep.deps,
+          basedir: basedir
+      }, next)
+    }, function(_, next) {
+      if(next) {
+        next(null, self._deps)
+      }
+    })
+
+
   if (this._async) {
-    this.readFile(filename, function(err, src) {
-      if (err) return done(err)
-      self.getTransformsForFile(filename, function(err, trs) {
-        if (err) return done(err)
-
-        self.emit('file', filename)
-        self.applyTransforms(filename, src, trs, function(err, src) {
-          if (err) return done(err)
-
-          dep.source = src
-          extractPreprocessors(dep.source, imports, exports)
-          self._resolveImports(imports, {
-            deps: dep.deps,
-            basedir: basedir
-          }, function(err) {
-            setTimeout(function() {
-              done && done(err, !err && self._deps)
-            })
-          })
-        })
-      })
+    process(done || function() {
+      console.warn('glslify-deps: depper.add() has not a callback defined using async flow')
     })
-
+    return dep
   } else {
-    var src = this.readFile(filename)
-    var trs = this.getTransformsForFile(filename)
-    this.emit('file', filename)
-    src = this.applyTransforms(filename, src, trs)
-    dep.source = src
-    extractPreprocessors(dep.source, imports, exports)
-
-    this._resolveImports(imports, {
-      basedir: basedir,
-      deps: dep.deps
-    })
-
+    process()
     return this._deps
   }
-
-  return dep
 }
 
 /**
@@ -117,42 +106,41 @@ NodeDepper.prototype.add = function(filename, done) {
  * @return {object} resolved dependencies
  */
 NodeDepper.prototype._resolveImports = function(imports, opts, done) {
+  opts = opts || {}
   var self = this
-  var deps = opts && opts.deps || {}
+  var deps = opts.deps || {}
+  var parallel = opts.parallel || 10
 
-  if (this._async) {
-    map(imports, 10, function(imp, next) {
-      var importName = getImportName(imp)
-
-      self.resolve(importName, opts, function(err, resolved) {
-        if (err) return next(err)
-
-        if (self._cache[resolved]) {
-          deps[importName] = self._cache[resolved].id
-          return next()
-        }
-
+  var process = asyncify(
+    function(result, next) { return self.resolve(result[0], opts, next) },
+    function(result, next) {
+      var importName = result[0]
+      var resolved = result[1]
+      if (self._cache[resolved]) {
+        deps[importName] = self._cache[resolved].id
+        return next && next()
+      }
+      if (next) {
         self._cache[resolved] = self.add(resolved, function(err) {
           if (err) return next(err)
           deps[importName] = self._cache[resolved].id
           next()
         })
-      })
-    }, done)
-  } else {
-    var self = this
-    var deps = opts && opts.deps || {}
-
-    imports.forEach(function (imp) {
-      var importName = getImportName(imp)
-
-      var resolved = self.resolve(importName, opts)
-      if (self._cache[resolved]) {
+      } else {
+        var idx = self._i
+        self._cache[resolved] = self.add(resolved)[idx]
         deps[importName] = self._cache[resolved].id
       }
-      var i = self._i
-      self._cache[resolved] = self.add(resolved)[i]
-      deps[importName] = self._cache[resolved].id
+    }
+  )
+
+  if (this._async) {
+    map(imports, parallel, function(imp, next) {
+      process([getImportName(imp)], next)
+    }, done)
+  } else {
+    imports.forEach(function (imp) {
+      process([getImportName(imp)])
     })
   }
 

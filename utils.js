@@ -117,6 +117,9 @@ function mix(sync, async) {
       }
       apply(async, arguments)
     }
+    if (!sync) {
+      throw Error('There\'s no sync function available')
+    }
     return apply(sync, arguments)
   }
 
@@ -124,6 +127,90 @@ function mix(sync, async) {
   mixed.async = async;
 
   return mixed
+}
+
+/**
+ * Allows reuse sync/async logics detecting if done is defined to select which strategy to use.
+ * Arguments must be functions, if sync is detected then takes the returned value,
+ * otherwise when async next will be defined and will take the result from there
+ *
+ * @param {...(prevState: any[], next?: (err: Error, result?: any) => null) => any} args
+ * @returns {(initialState?: any[], done?: (err: Error, state?: any[]) => any) => any[]}
+ * @example
+ *
+ * const process = asyncify(
+ *   ([foo], next) => next ? next(null, 'bar') : 'bar',
+ *   ([foo, bar], next) => next ? next(null, foo + bar) : foo + bar
+ * )
+ *
+ * // sync
+ * const state = process(['foo'])
+ * console.log(state) // ['foo', 'bar', 'foobar']
+ *
+ * // async
+ * process(['bar'], (err, result) => console.log(result)) // ['foo', 'bar', 'foobar']
+ *
+ */
+function asyncify() {
+  var fns = arguments;
+  return function(initialState, done) {
+    if (typeof initialState === 'function') {
+      done = initialState
+      initialState = []
+    }
+
+    var state = initialState || []
+
+    if (!Array.isArray(state)) {
+      throw new Error('asyncify: initialState must be an array')
+    }
+
+    var cursor = state.length
+
+    var i = 0
+    if (!fns.length) {
+      throw new Error('asyncify: no functions detected')
+    }
+
+    if(typeof state[state.length - 1] === 'function') {
+      done = state.pop();
+      cursor = state.length
+    }
+
+    function error() {
+      return new Error('asyncify: arguments must be functions')
+    }
+
+    if (!done) {
+      for(; i < fns.length; i++) {
+        if (typeof fns[i] !== 'function') {
+          throw error()
+        }
+        state[cursor + i] = fns[i](state);
+      }
+    } else {
+      function next(err, result) {
+        if(err) {
+          done(err)
+        } else {
+          state[cursor + i++] = result
+          if (i < fns.length) {
+            if (typeof fns[i] !== 'function') {
+              done(error())
+            } else {
+              fns[i](state, next)
+            }
+          } else {
+            done(null, state[state.length - 1])
+          }
+        }
+      }
+
+      fns[i](state, next)
+    }
+
+    return state;
+  }
 }
 
 function cacheWrap(read, cache) {
@@ -166,5 +253,6 @@ module.exports = {
   genInlineName,
   cacheWrap,
   mix,
-  parseFiles
+  parseFiles,
+  asyncify
 }
