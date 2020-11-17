@@ -1,6 +1,5 @@
 // @ts-check
 /** @typedef {import('glsl-resolve')} GlslResolve */
-var path     = require('path')
 var Emitter  = require('events/')
 var inherits = require('inherits')
 var map      = require('map-limit')
@@ -70,7 +69,6 @@ var {
 /**
  * @typedef {Object} DepperOptions
  * @prop {Boolean} [async] Defines the mechanism flow resolution.
- * @prop {String} [cwd] The root directory of your shader. Defaults to process.cwd().
  * @prop {Function} [readFile] pass in a custom function reading files.
  * @prop {GlslResolve} [resolve] pass in a custom function for resolving require calls. It has the same signature as glsl-resolve.
  * @prop {Object<string, string>} [files] a filename/source object mapping of files to prepopulate the file cache with. Useful for overriding.
@@ -101,16 +99,11 @@ function Depper(opts) {
 
   this._cache      = {}
   this._fileCache  = parseFiles(Object.assign({}, opts.files) || {})
-  this._cwd        = opts.cwd || process.cwd()
 
   /** @type {TransformDefinition[]} */
   this._transforms = []
   /** @type {TransformDefinition[]} */
   this._globalTransforms = []
-
-  if (typeof this._cwd !== 'string') {
-    throw new Error('glslify-deps: cwd must be a string path')
-  }
 
   if (!opts.readFile) {
     throw new Error('glslify-deps: readFile must be defined')
@@ -139,10 +132,9 @@ function Depper(opts) {
   }
 }
 
-Depper.prototype.inline = function(source, basedir, done) {
-  var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
+Depper.prototype.inline = function(source, filename, done) {
   this._inlineSource = source
-  return this.add(inlineFile, done)
+  return this.add(filename || this._inlineName, done)
 }
 
 /**
@@ -263,11 +255,16 @@ Depper.prototype.transform = function(transform, opts) {
  *
  *
  * @param {String|GlslTransform} transform
+ * @param {Object} [opts] The options will be pased to transformRequire function.
  * @param {(err: Error, transform?: GlslTransform) => any} [done] Applies if is defined
  * @return {Function}
  */
-Depper.prototype.resolveTransform = function(transform, done) {
-  var opts = { cwd: this._cwd }
+Depper.prototype.resolveTransform = function(transform, opts, done) {
+  if (typeof opts === 'function') {
+    done = opts
+    opts = {}
+  }
+
   var self = this
 
   if (typeof transform === 'function') {
@@ -358,7 +355,7 @@ Depper.prototype._addDep = function(file, extra) {
 }
 
 /**
- * Internal method to register
+ * Internal method to register transforms
  * @param {TransformDefinition[]} transforms
  * @param {(err: Error, resolved?: TransformResolved[]) => any} cb
  * @returns {TransformResolved[]}
@@ -444,7 +441,7 @@ Depper.prototype._resolveImports = function(imports, opts, done) {
 }
 
 Depper.prototype.readFile = function(filename, done) {
-  if (path.basename(filename) !== this._inlineName)
+  if (filename !== this._inlineName)
     return this._readFile(filename, done)
 
   if(this._async) {

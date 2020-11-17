@@ -1,7 +1,6 @@
 /** @typedef {import('./depper').DepperOptions} DepperOptions */
 var Depper   = require('./depper')
 var path     = require('path')
-var map      = require('map-limit')
 var inherits = require('inherits')
 var fs       = require('graceful-fs')
 var findup   = require('@choojs/findup')
@@ -32,6 +31,7 @@ function createDefaultRead() {
  *//**
  * @constructor
  * @param {DepperOptions} opts
+ * @param {String} [opts.cwd] The root directory of your shader. Defaults to process.cwd().
  */
 function NodeDepper(opts) {
   if (!(this instanceof NodeDepper)) return new NodeDepper(opts)
@@ -41,7 +41,24 @@ function NodeDepper(opts) {
   opts.transformRequire = opts.transformRequire || transformRequire.sync
   opts.readFile = opts.readFile || createDefaultRead()
   Depper.call(this, opts)
+
+  this._cwd        = opts.cwd || process.cwd()
   this._trCache    = {}
+
+  if (typeof this._cwd !== 'string') {
+    throw new Error('glslify-deps: cwd must be a string path')
+  }
+}
+
+/**
+ * @override
+ * @param {*} source
+ * @param {*} basedir
+ * @param {*} done
+ */
+NodeDepper.prototype.inline = function(source, basedir, done) {
+  var inlineFile = path.resolve(basedir || this._cwd, this._inlineName)
+  return Depper.prototype.inline.call(this, source, inlineFile, done);
 }
 
 /**
@@ -55,6 +72,34 @@ NodeDepper.prototype.add = function(filename, done) {
     basedir: path.dirname(resolved)
   }, done)
 }
+
+/**
+ * @override
+ * @param {String|GlslTransform} transform
+ * @param {(err: Error, transform?: GlslTransform) => any} [done] Applies if is defined
+ * @return {Function}
+ */
+NodeDepper.prototype.resolveTransform = function(transform, done) {
+  return Depper.prototype.resolveTransform.call(this, transform, {
+    cwd: this._cwd
+  }, done)
+}
+
+/**
+ * @override
+ * @param {*} filename
+ * @param {*} done
+ */
+NodeDepper.prototype.readFile = function(filename, done) {
+  if (path.basename(filename) !== this._inlineName)
+    return this._readFile(filename, done)
+
+  if(this._async) {
+    return done(null, this._inlineSource)
+  }
+  return this._inlineSource
+}
+
 
 /**
  * Determines which transforms to use for a particular file.
