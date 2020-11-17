@@ -185,13 +185,13 @@ class Depper extends EventEmitter {
     const process = asyncify(
       (_, next) => self.readFile(filename, next),
       (_, next) => self.getTransformsForFile(filename, next),
-      (result, next) => {
+      ([src, transforms], next) => {
         // @ts-ignore
         self.emit('file', filename)
-        return self.applyTransforms(filename, result[0], result[1], next)
+        return self.applyTransforms(filename, src, transforms, next)
       },
-      (result, next) => {
-        extractPreprocessors(dep.source = result[2], imports, exports)
+      ([,,updated], next) => {
+        extractPreprocessors(dep.source = updated, imports, exports)
         return self._resolveImports(imports, resolveOpts, next)
       }, (_, next) => {
         if (next) {
@@ -413,10 +413,8 @@ class Depper extends EventEmitter {
     const parallel = (opts && opts.parallel) || 10
 
     const process = asyncify(
-      (result, next) => this.resolve(result[0], opts, next),
-      (result, next) => {
-        const importName = result[0]
-        const resolved = result[1]
+      ([importName], next) => this.resolve(importName, opts, next),
+      ([importName, resolved], next) => {
         if (this._cache[resolved]) {
           deps[importName] = this._cache[resolved].id
           return next && next()
