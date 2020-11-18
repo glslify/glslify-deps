@@ -1,20 +1,19 @@
-var test = require('tape')
-var deps = require('../sync')
-var path = require('path')
-var fs   = require('fs')
+const test = require('tape')
+const deps = require('../sync')
+const path = require('path')
+const fs = require('fs')
 
-var fixture = path.resolve(__dirname, 'fixtures/invalid-package/index.glsl')
-var pkgjson = path.resolve(__dirname, 'fixtures/invalid-package/package.json')
+const fixture = path.resolve(__dirname, 'fixtures/invalid-package/index.glsl')
+const pkgjson = path.resolve(__dirname, 'fixtures/invalid-package/package.json')
 
-test('sync invalid package.json', function(t) {
-  var err
-  try { var ds = deps().add(fixture) }
-  catch (e) { err = e }
+test('sync invalid package.json', (t) => {
+  let err
+  try { deps().add(fixture) } catch (e) { err = e }
   t.ok(err, 'error reported')
 
   try {
     JSON.parse(fs.readFileSync(pkgjson, 'utf8'))
-  } catch(e) {
+  } catch (e) {
     t.equal(err.message, e.message, 'error caused by parsing JSON')
     t.end()
   }

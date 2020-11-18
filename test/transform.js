@@ -1,53 +1,65 @@
-var test = require('tape')
-var path = require('path')
-var deps = require('../')
-var fs   = require('fs')
+const test = require('tape')
+const path = require('path')
+const deps = require('../')
+const fs = require('fs')
+const transformRequire = require('../transform-require')
 
-var fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
-var another = path.resolve(__dirname, 'fixtures/transform/another.glsl')
-var fake    = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
+const fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
+const fake = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
 
-test('.transform(string)', function(t) {
-  var src = fs.readFileSync(fixture, 'utf8')
-  var depper = deps()
+const suite = [[
+  'transformResolve sync'
+], [
+  'transformResolve sync', {
+    transformRequire: transformRequire
+  }]
+]
 
-  depper.transform('glslify-hex')
-  depper.add(fixture, function(err, deps) {
-    if (err) return t.ifError(err)
-    t.notEqual(deps[0].source, src, 'source was transformed')
-    t.end()
+suite.forEach((s) => {
+  const context = s[0]
+  const opts = s[1]
+
+  test(context + ' .transform(string)', (t) => {
+    const src = fs.readFileSync(fixture, 'utf8')
+    const depper = deps(opts)
+
+    depper.transform('glslify-hex')
+    depper.add(fixture, (err, deps) => {
+      if (err) return t.ifError(err)
+      t.notEqual(deps[0].source, src, 'source was transformed')
+      t.end()
+    })
   })
-})
 
-test('.transform(fn)', function(t) {
-  var src = fs.readFileSync(fake, 'utf8')
-  var depper = deps()
+  test(context + ' .transform(fn)', (t) => {
+    const src = fs.readFileSync(fake, 'utf8')
+    const depper = deps(opts)
 
-  depper.transform(function(file, src, opts, done) {
-    return done(null, src.toUpperCase())
+    depper.transform((file, src, opts, done) => {
+      return done(null, src.toUpperCase())
+    })
+
+    depper.add(fake, (err, deps) => {
+      if (err) return t.ifError(err)
+      t.equal(deps[0].source, src.toUpperCase(), 'source was transformed')
+      t.end()
+    })
   })
 
-  depper.add(fake, function(err, deps) {
-    if (err) return t.ifError(err)
-    t.equal(deps[0].source, src.toUpperCase(), 'source was transformed')
-    t.end()
-  })
-})
+  test(context + ' .transform(fn, opts)', (t) => {
+    const opts = {
+      hello: 'world'
+    }
+    const depper = deps(opts)
 
-test('.transform(fn, opts)', function(t) {
-  var src    = fs.readFileSync(fake, 'utf8')
-  var depper = deps()
-  var opts   = {
-    hello: 'world'
-  }
+    depper.transform((file, src, opts, done) => {
+      return done(null, '//' + JSON.stringify(opts))
+    }, opts)
 
-  depper.transform(function(file, src, opts, done) {
-    return done(null, '//'+JSON.stringify(opts))
-  }, opts)
-
-  depper.add(fake, function(err, deps) {
-    if (err) return t.ifError(err)
-    t.equal(deps[0].source, '//'+JSON.stringify(opts), 'source was transformed')
-    t.end()
+    depper.add(fake, (err, deps) => {
+      if (err) return t.ifError(err)
+      t.equal(deps[0].source, '//' + JSON.stringify(opts), 'source was transformed')
+      t.end()
+    })
   })
 })
