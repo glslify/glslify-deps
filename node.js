@@ -13,7 +13,9 @@ const transformRequire = require('./transform-require')
 
 const {
   getTransformsFromPkg,
-  mix
+  mix,
+  cacheWrap,
+  parseFiles,
 } = require('./utils')
 
 /**
@@ -59,11 +61,14 @@ class NodeDepper extends Depper {
     opts.resolve = opts.resolve || mix(glslResolve.sync, glslResolve)
     // keeps the original behaviour of transform resolution but overridable
     opts.transformRequire = opts.transformRequire || transformRequire.sync
+
     opts.readFile = opts.readFile || createDefaultRead()
     super(opts)
 
     this._cwd = opts.cwd || process.cwd()
     this._trCache = {}
+    this._fileCache = parseFiles(Object.assign({}, opts.files) || {})
+    this._readFile = cacheWrap(this._readFile, this._fileCache)
 
     if (typeof this._cwd !== 'string') {
       throw new Error('glslify-deps: cwd must be a string path')

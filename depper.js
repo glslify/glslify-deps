@@ -5,8 +5,6 @@ const map = require('map-limit')
 
 const {
   genInlineName,
-  cacheWrap,
-  parseFiles,
   getImportName,
   extractPreprocessors,
   asyncify
@@ -106,7 +104,6 @@ class Depper extends EventEmitter {
     this._deps = []
 
     this._cache = {}
-    this._fileCache = parseFiles(Object.assign({}, opts.files) || {})
 
     /** @type {TransformDefinition[]} */
     this._transforms = []
@@ -117,7 +114,7 @@ class Depper extends EventEmitter {
       throw new Error('glslify-deps: readFile must be defined')
     }
 
-    this._readFile = cacheWrap(opts.readFile, this._fileCache)
+    this._readFile = opts.readFile
 
     if (!opts.resolve) {
       throw new Error('glslify-deps: resolve must be defined')
