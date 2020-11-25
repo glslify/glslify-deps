@@ -2,14 +2,28 @@ var test = require('tape')
 var path = require('path')
 var deps = require('../')
 var fs   = require('fs')
+var transformRequire = require('../transform-require')
 
 var fixture = path.resolve(__dirname, 'fixtures/transform/index.glsl')
 var another = path.resolve(__dirname, 'fixtures/transform/another.glsl')
 var fake    = path.resolve(__dirname, 'fixtures/node_modules/glsl-fake/index.glsl')
 
-test('.transform(string)', function(t) {
+var suite   = [[
+  'transformResolve sync'
+], [
+  'transformResolve sync', {
+    transformRequire: transformRequire
+  }]
+]
+
+suite.forEach(function(s) {
+
+  var context = s[0]
+  var opts    = s[1]
+
+test(context + ' .transform(string)', function(t) {
   var src = fs.readFileSync(fixture, 'utf8')
-  var depper = deps()
+  var depper = deps(opts)
 
   depper.transform('glslify-hex')
   depper.add(fixture, function(err, deps) {
@@ -19,9 +33,9 @@ test('.transform(string)', function(t) {
   })
 })
 
-test('.transform(fn)', function(t) {
+test(context + ' .transform(fn)', function(t) {
   var src = fs.readFileSync(fake, 'utf8')
-  var depper = deps()
+  var depper = deps(opts)
 
   depper.transform(function(file, src, opts, done) {
     return done(null, src.toUpperCase())
@@ -34,9 +48,9 @@ test('.transform(fn)', function(t) {
   })
 })
 
-test('.transform(fn, opts)', function(t) {
+test(context + ' .transform(fn, opts)', function(t) {
   var src    = fs.readFileSync(fake, 'utf8')
-  var depper = deps()
+  var depper = deps(opts)
   var opts   = {
     hello: 'world'
   }
@@ -50,4 +64,6 @@ test('.transform(fn, opts)', function(t) {
     t.equal(deps[0].source, '//'+JSON.stringify(opts), 'source was transformed')
     t.end()
   })
+})
+
 })
