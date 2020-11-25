@@ -5,11 +5,17 @@ var map      = require('map-limit')
 var inherits = require('inherits')
 var Emitter  = require('events/')
 var path     = require('path')
-
+var cacheWrap = require('./cacheWrap');
 var glslResolve = require('glsl-resolve').sync
 var nodeResolve = require('resolve').sync
+var {
+  glslifyPreprocessor,
+  glslifyExport,
+  glslifyImport,
+  genInlineName
+} = require('./common.js')
 
-var inlineName   = '__INLINE__' + Math.random()
+var inlineName   = genInlineName()
 var inlineSource = ''
 
 module.exports = Depper
@@ -66,7 +72,7 @@ Depper.prototype.inline = function(source, basedir) {
  *   return src.toUpperCase()
  * }
  * ```
- * 
+ *
  * This is also different from the async transform API.
  *
  * Where `filename` is the absolute file path, `src` is the shader source
@@ -293,35 +299,6 @@ Depper.prototype.applyTransforms = function(filename, src, transforms) {
   return src
 }
 
-function glslifyPreprocessor(data) {
-  return /#pragma glslify:/.test(data)
-}
-
-function glslifyExport(data) {
-  return /#pragma glslify:\s*export\(([^\)]+)\)/.exec(data)
-}
-
-function glslifyImport(data) {
-  return /#pragma glslify:\s*([^=\s]+)\s*=\s*require\(([^\)]+)\)/.exec(data)
-}
-
 function defaultRead(src) {
   return fs.readFileSync(src, 'utf8')
-}
-
-function cacheWrap(read, cache) {
-  // resolve all cached files such that they match
-  // all of the paths glslify handles, which are otherwise
-  // absolute
-  cache = Object.keys(cache).reduce(function(newCache, file) {
-    newCache[path.resolve(file)] = cache[file]
-    return newCache
-  }, {})
-
-  return function readFromCache(filename) {
-    if (!cache[filename]) {
-      cache[filename] = read(filename)
-    }
-    return cache[filename]
-  }
 }
