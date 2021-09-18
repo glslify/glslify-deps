@@ -146,7 +146,7 @@ Depper.prototype.add = function(filename, done) {
   return dep
 
   function extractPreprocessors() {
-    var tokens = tokenize(dep.source)
+    var tokens = tokenize(dep.source, { version: '300 es' })
 
     for (var i = 0; i < tokens.length; i++) {
       var token = tokens[i]
